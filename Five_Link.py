@@ -2,37 +2,6 @@ import numpy as np
 import scipy as sp
 
 
-#figure out a better way to do this np.block?  
-def __block__(matrix):
-
-    row_count = 0
-    for block in matrix:
-        row_count += np.shape(block)[0]
-
-    colum_count = 0
-    for block in matrix[0]:
-        colum_count += np.shape(block)[1]
-
-    output = np.zeros((row_count, colum_count))
-
-
-    #iterates through the input matrix 
-    start_coords = [0,0]
-    for i, row in enumerate(matrix):
-        for j, block in enumerate(row):
-
-            #iterates through each block of the input matrix 
-            for k, block_row in enumerate(block):
-                for l, val in enumerate(block_row):
-                    output[start_coords[0]+k][start_coords[1]+l] = val
-
-            start_coords[1] += np.shape(block)[0]
-
-        start_coords[0] += np.shape(row[0])[1]
-        start_coords[1] = 0
-
-    return output
-
 def __gen_P_W__():
     #output = np.zeros((5,1), dtype=np.ndarray)
 
@@ -71,14 +40,7 @@ def __gen_P_AB__(lengths):
 def __gen_P__(upright_pickups, lengths):
     return np.block([__gen_P_W__(), __gen_P_R__(upright_pickups), __gen_P_AB__(lengths)])
 
-upright_pickups = np.array([[1,2,3],
-                    [1,2,3],
-                    [1,2,3],
-                    [1,2,3],
-                    [1,2,3]])
-
-lengths = np.array([1,2,3,4,5])
-
-#print(ab_mat)
+def __gen_A__(frame_pickups):
+    return np.ravel(frame_pickups).T
 
 

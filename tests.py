@@ -91,4 +91,29 @@ def test_P():
  
     
     assert five_link.__gen_P__(upright_pickups, lengths).all() == correct_output.all()
+
+
+def test_A():
+    frame_pickups = np.array([[31,32,33],
+                                [34,35,36],
+                                [37,38,39],
+                                [40,41,42],
+                                [43,44,45]])
     
+    correct_output = np.array([[31],
+                                [32],
+                                [33],
+                                [34],
+                                [35],
+                                [36],
+                                [37],
+                                [38],
+                                [39],
+                                [40],
+                                [41],
+                                [42],
+                                [43],
+                                [44],
+                                [45]])
+
+    assert five_link.__gen_A__(frame_pickups).all() == correct_output.all()
