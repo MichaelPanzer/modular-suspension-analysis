@@ -5,19 +5,42 @@ import scipy as sp
 #figure out a better way to do this np.block?
 def __block__(matrix):
 
-    #sets size of output matrix
-    block_shape = matrix[0][0].shape
-    output = np.zeros((matrix.shape[0]*block_shape[0], matrix.shape[1]*block_shape[1]))
+    row_count = 0
+    for block in matrix:
+        row_count += np.shape(block)[0]
+
+    colum_count = 0
+    for block in matrix[0]:
+        colum_count += np.shape(block)[1]
+
+    output = np.zeros((row_count, colum_count))
+
 
     #iterates through the input matrix 
+    start_coords = [0,0]
     for i, row in enumerate(matrix):
         for j, block in enumerate(row):
+
             #iterates through each block of the input matrix 
             for k, block_row in enumerate(block):
                 for l, val in enumerate(block_row):
-                    output[i*block_shape[0]+k][j*block_shape[1]+l] = val
+                    output[start_coords[0]+k][start_coords[1]+l] = val
+
+            start_coords[1] += np.shape(block)[0]
+
+        start_coords[0] += np.shape(row[0])[1]
+        start_coords[1] = 0
 
     return output
+
+def __gen_P_W__():
+    output =  np.zeros((5,1), dtype=np.ndarray)
+
+    for i, output_val in enumerate(output):
+        output[i, 0] = -1*np.identity(3)
+
+    return __block__(output)
+
 
 
 def __gen_P_R__(upright_pickups):
@@ -40,19 +63,17 @@ def __gen_P_AB__(lengths):
 
     return np.diag(output)
 
+def __gen_P__(upright_pickups, lengths):
+    return __block__(np.array([__gen_P_W__(), __gen_P_R__(upright_pickups), __gen_P_AB__(lengths)]))
 
-mat = __gen_P_R__(np.array([[1,2,3],
+upright_pickups = np.array([[1,2,3],
                     [1,2,3],
                     [1,2,3],
                     [1,2,3],
-                    [1,2,3]]))
+                    [1,2,3]])
 
+lengths = np.array([1,2,3,4,5])
 
-
-#print(mat)
-
-ab_mat = __gen_P_AB__(np.array([1,2,3,4,5]))
-
-print(ab_mat)
+#print(ab_mat)
 
 
