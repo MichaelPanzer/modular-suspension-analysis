@@ -1,5 +1,5 @@
 import numpy as np
-from Five_Link import __block__
+import five_link
 
 
 def test_block_square():
@@ -10,7 +10,7 @@ def test_block_square():
 
     input_mat = np.array([[block_1, block_2], [block_3, block_4]])
 
-    output = __block__(input_mat)
+    output = np.block(input_mat.tolist())
 
     correct_output = np.array([[1,2,3,4],
                                [5,6,7,8],
@@ -25,9 +25,9 @@ def test_block_non_square():
     block_3 = np.array([[6,7,8,9], [15,16,17,18]])
 
 
-    input_mat = np.array([block_1, block_2, block_3])
+    input_mat = [block_1, block_2, block_3]
 
-    output = __block__(input_mat)
+    output = np.block(input_mat)
 
     correct_output = np.array([[1,2,3,4,5,6,7,8,9],
                                [10,11,12,13,14,15,16,17,18]])
