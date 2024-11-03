@@ -32,7 +32,7 @@ def __gen_P_AB__(lengths):
     for i, length in enumerate(lengths):
         for j in range(3*i, 3*i+3):
             output[j] = -1*length
-
+    # swap colums arorund
     return np.diag(output)
 
 def gen_P(upright_pickups, lengths):
@@ -45,19 +45,19 @@ variable_index_lookup = {"W_x": 0,
                          "W_y": 1,
                          "W_z": 2 }
 
-def solve_linear(driving_variable, P, A):
-    driving_variable = variable_index_lookup[driving_variable]
+def solve_linear(P, A):
+    #driving_variable = variable_index_lookup[driving_variable]
 
     #saves then copies the colum of the driving variable from the equation matrix
-    driving_colum = np.array(P[:, [driving_variable]])
-    P = np.delete(P, driving_variable, 1)
+    #driving_colum = np.array(P[:, [driving_variable]])
+    #P = np.delete(P, driving_variable, 1)
 
     l, u = sp.linalg.lu(P, permute_l=True, overwrite_a=True)
     l = np.linalg.inv(l)
 
     A = np.dot(l, A)
-    driving_colum = np.dot(l, driving_colum)
+    #driving_colum = np.dot(l, driving_colum)
 
     #print(l, u, A)
-    return u, driving_colum, A
+    return u, A
 
