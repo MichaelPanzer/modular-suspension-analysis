@@ -36,7 +36,6 @@ def __gen_P_AB__(lengths):
         for j in range(3*i, 3*i+3):
             output[j] = -1*length
 
-    print()
     return np.diag(output)
 
 def gen_P(upright_pickups, lengths):
