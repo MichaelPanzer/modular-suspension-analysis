@@ -37,10 +37,10 @@ def __gen_P_AB__(lengths):
 
     return np.diag(output)
 
-def __gen_P__(upright_pickups, lengths):
+def gen_P(upright_pickups, lengths):
     return np.block([__gen_P_W__(), __gen_P_R__(upright_pickups), __gen_P_AB__(lengths)])
 
-def __gen_A__(frame_pickups):
+def gen_A(frame_pickups):    
     return np.ravel(frame_pickups).T
 
 

@@ -19,7 +19,7 @@ def test_P_W():
                                [0,1,0],
                                [0,0,1]])
     
-    assert five_link.__gen_P_W__().all() == correct_output.all()
+    assert np.array_equal(five_link.__gen_P_W__(), correct_output)
 
 def test_P_R():
     upright_pickups = np.array([[1,2,3],
@@ -43,7 +43,8 @@ def test_P_R():
                                [13,0,0,14,0,0,15,0,0],
                                [0,13,0,0,14,0,0,15,0],
                                [0,0,13,0,0,14,0,0,15]])
-    assert five_link.__gen_P_R__(upright_pickups).all() == correct_output.all()
+    assert np.array_equal(five_link.__gen_P_R__(upright_pickups), correct_output)
+
 def test_P_AB():
     lengths = np.array([21,22,23,24,25])
 
@@ -62,7 +63,7 @@ def test_P_AB():
                                [-25,0,0],
                                [0,-25,0],
                                [0,0,-25]])
-    assert five_link.__gen_P_AB__(lengths).all() == correct_output.all()
+    assert np.array_equal(five_link.__gen_P_AB__(lengths), correct_output)
 
 def test_P():
     upright_pickups = np.array([[1,2,3],
@@ -90,7 +91,8 @@ def test_P():
                                [0,0,1, 0,0,13,0,0,14,0,0,15, 0,0,-25] ])
  
     
-    assert five_link.__gen_P__(upright_pickups, lengths).all() == correct_output.all()
+    assert np.array_equal(five_link.__gen_P__(upright_pickups, lengths), correct_output)
+
 
 
 def test_A():
