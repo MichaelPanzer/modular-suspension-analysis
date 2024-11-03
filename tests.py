@@ -91,7 +91,7 @@ def test_P():
                                [0,0,1, 0,0,13,0,0,14,0,0,15, 0,0,-25] ])
  
     
-    assert np.array_equal(five_link.__gen_P__(upright_pickups, lengths), correct_output)
+    assert np.array_equal(five_link.gen_P(upright_pickups, lengths), correct_output)
 
 
 
@@ -118,4 +118,4 @@ def test_A():
                                 [44],
                                 [45]])
 
-    assert five_link.__gen_A__(frame_pickups).all() == correct_output.all()
+    assert five_link.gen_A(frame_pickups).all() == correct_output.all()
