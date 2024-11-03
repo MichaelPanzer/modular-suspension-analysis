@@ -119,3 +119,23 @@ def test_A():
                                 [45]])
 
     assert five_link.gen_A(frame_pickups).all() == correct_output.all()
+
+def test_linear_solve():
+    P = np.array([[1,5,1,1,1], 
+                  [2,5,1,1,1]])
+
+    A = np.atleast_2d(np.array([5,2])).T
+
+    driving_variable = "W_y"
+
+    #correct answersf
+    correct_upper_matrix = np.array([[2,1,1,1],
+                               [0,0.5,0.5,0.5]])
+    correct_driving_colum = np.atleast_2d(np.array([5, 2.5])).T
+    correct_A = np.atleast_2d(np.array([2,4])).T
+
+
+    u, driving_colum, A = five_link.solve_linear(driving_variable, P, A)
+
+
+    assert np.array_equal(A, correct_A) and np.array_equal(driving_colum, correct_driving_colum) and np.array_equal(u, correct_upper_matrix)

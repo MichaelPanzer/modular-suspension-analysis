@@ -39,24 +39,25 @@ def gen_P(upright_pickups, lengths):
     return np.block([__gen_P_W__(), __gen_P_R__(upright_pickups), __gen_P_AB__(lengths)])
 
 def gen_A(frame_pickups):    
-    return np.ravel(frame_pickups).T
+    return np.atleast_2d(np.ravel(frame_pickups)).T
 
 variable_index_lookup = {"W_x": 0,
                          "W_y": 1,
                          "W_z": 2 }
 
 def solve_linear(driving_variable, P, A):
-    driving_variable = variable_index_lookup(driving_variable)
+    driving_variable = variable_index_lookup[driving_variable]
 
     #saves then copies the colum of the driving variable from the equation matrix
-    driving_colum = P[:, [driving_variable]]
-    P = np.delete(P, (driving_variable,1))
+    driving_colum = np.array(P[:, [driving_variable]])
+    P = np.delete(P, driving_variable, 1)
 
-    p, l, u = sp.linalg.lu(P)
+    l, u = sp.linalg.lu(P, permute_l=True, overwrite_a=True)
+    l = np.linalg.inv(l)
 
-    A = np.dot(p, A)
-    driving_colum = np.dot(p, driving_colum)
+    A = np.dot(l, A)
+    driving_colum = np.dot(l, driving_colum)
 
-
+    #print(l, u, A)
     return u, driving_colum, A
 
