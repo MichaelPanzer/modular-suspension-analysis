@@ -12,8 +12,6 @@ def __gen_P_W__():
 
     return np.block(output)
 
-
-
 def __gen_P_R__(upright_pickups):
     output = np.zeros((5,3), dtype=np.ndarray)
     #output = [[np.identity(3)] * 3] *5
@@ -25,7 +23,6 @@ def __gen_P_R__(upright_pickups):
             output[i, j] = pickup_coord*np.identity(3)
 
     #combines the block matrix
-    print(output)
     return np.block(output.tolist())
 
 def __gen_P_AB__(lengths):
@@ -44,4 +41,22 @@ def gen_P(upright_pickups, lengths):
 def gen_A(frame_pickups):    
     return np.ravel(frame_pickups).T
 
+variable_index_lookup = {"W_x": 0,
+                         "W_y": 1,
+                         "W_z": 2 }
+
+def solve_linear(driving_variable, P, A):
+    driving_variable = variable_index_lookup(driving_variable)
+
+    #saves then copies the colum of the driving variable from the equation matrix
+    driving_colum = P[:, [driving_variable]]
+    P = np.delete(P, (driving_variable,1))
+
+    p, l, u = sp.linalg.lu(P)
+
+    A = np.dot(p, A)
+    driving_colum = np.dot(p, driving_colum)
+
+
+    return u, driving_colum, A
 
