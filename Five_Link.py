@@ -15,18 +15,18 @@ def __gen_P_W__():
 
 
 def __gen_P_R__(upright_pickups):
-    #p_r = np.zeros((5,3), dtype=np.ndarray)
-    output = [[np.identity(3)] * 3] *5
+    output = np.zeros((5,3), dtype=np.ndarray)
+    #output = [[np.identity(3)] * 3] *5
 
     #each block is a pickup coordinate * the identity matrix
     for i, pickup_n in enumerate(upright_pickups) :
         for j, pickup_coord in enumerate(pickup_n):
-            print(output[i, j])
-            output[i][j] = pickup_coord*output[i][j]
+            #print(output[i, j])
+            output[i, j] = pickup_coord*np.identity(3)
 
     #combines the block matrix
-    #print(output)
-    return np.block(output)
+    print(output)
+    return np.block(output.tolist())
 
 def __gen_P_AB__(lengths):
     output = np.zeros(lengths.size * 3)
@@ -36,6 +36,7 @@ def __gen_P_AB__(lengths):
         for j in range(3*i, 3*i+3):
             output[j] = -1*length
 
+    print()
     return np.diag(output)
 
 def gen_P(upright_pickups, lengths):
