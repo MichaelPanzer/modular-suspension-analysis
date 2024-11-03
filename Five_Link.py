@@ -1,5 +1,6 @@
 import numpy as np
 import scipy as sp
+import sympy as symp
 
 
 def __gen_P_W__():
@@ -60,4 +61,63 @@ def solve_linear(P, A):
 
     #print(l, u, A)
     return u, A
+
+
+""""
+def gen_AB_nonlinear_eq(vars):
+    AB_x, AB_y, AB_z = vars
+
+    beta = np.arccos(AB_z)
+    alpha = np.arcsin(AB_y/np.sin(beta))
+
+    AB_x = np.cos(alpha)*np.sin(beta)
+    return AB_x, AB_y, AB_z
+
+
+def gen_R_nonlinear_eq(vars):
+    r_0,r_1,r_2,r_3,r_4,r_5,r_6,r_7,r_8 = vars
+
+    phi = np.arcsin(-1*r_2)
+    theta = np.arcsin(r_5/np.cos(phi))
+    gamma = np.arcsin(r_2/np.cos(phi))
+
+    r_0 = np.cos(phi)*np.cos(gamma)
+    r_1 = np.cos(phi)*np.sin(gamma)
+
+    r_3
+    r_4 = np.sin(theta)*np.sin(phi)*np.sin(gamma) + 
+"""
+def gen_AB_nonlinear_eq(vars):
+    AB_x, AB_y, AB_z = vars
+
+    return AB_x**2 + AB_y**2 + AB_z**2 - 1
+
+
+def gen_R_nonlinear_eq(vars):
+    r_0,r_1,r_2,r_3,r_4,r_5,r_6,r_7,r_8 = vars
+
+    eq_0 = r_0**2 + r_3**2 + r_6**2 - 1
+    eq_1 = r_1**2 + r_4**2 + r_7**2 - 1
+    eq_2 = r_2**2 + r_5**2 + r_8**2 - 1
+
+    return np.array([eq_0, eq_1, eq_2])
+
+
+def equations(x, P, A):
+    
+    linear_equations = (np.dot(P, x)).T - A.T
+     
+    r_vec = x[3:12]
+    eq_r_0, eq_r_1, eq_r_2 = gen_R_nonlinear_eq(r_vec)
+
+    r_eqs = np.array([eq_r_0, eq_r_1, eq_r_2])
+
+    ab_eqs = np.zeros(5, dtype=object)
+    ab_vecs = x[12:]
+
+    for i, eq in enumerate(ab_eqs):
+        ab_eqs[i] = gen_AB_nonlinear_eq(ab_vecs[i:i+3])
+        print(ab_eqs[i])
+    
+    return np.concatenate((linear_equations[0], r_eqs, ab_eqs))
 
