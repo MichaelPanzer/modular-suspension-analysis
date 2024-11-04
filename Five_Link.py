@@ -96,28 +96,34 @@ def gen_AB_nonlinear_eq(vars):
 def gen_R_nonlinear_eq(vars):
     r_0,r_1,r_2,r_3,r_4,r_5,r_6,r_7,r_8 = vars
 
+
+    #this comes from the R*Rt = I
     eq_0 = r_0**2 + r_3**2 + r_6**2 - 1
     eq_1 = r_1**2 + r_4**2 + r_7**2 - 1
     eq_2 = r_2**2 + r_5**2 + r_8**2 - 1
 
-    return np.array([eq_0, eq_1, eq_2])
+    eq_3 = r_0*r_1 + r_3*r_4 + r_6*r_7
+    eq_4 = r_0*r_2 + r_3*r_5 + r_6*r_8
+    eq_5 = r_1*r_2 + r_4*r_5 + r_7*r_8
+
+    return np.array([eq_0, eq_1, eq_2, eq_3, eq_4, eq_5])
 
 
-def equations(x, P, A):
+def equations(x, P, A, driving_expression):
     
-    linear_equations = (np.dot(P, x)).T - A.T
-     
-    r_vec = x[3:12]
-    eq_r_0, eq_r_1, eq_r_2 = gen_R_nonlinear_eq(r_vec)
+    linear_equations = ((np.dot(P, x)).T - A.T)[0]
 
-    r_eqs = np.array([eq_r_0, eq_r_1, eq_r_2])
+    r_vec = x[3:12]
+    r_eqs = gen_R_nonlinear_eq(r_vec)
 
     ab_eqs = np.zeros(5, dtype=object)
     ab_vecs = x[12:]
 
     for i, eq in enumerate(ab_eqs):
         ab_eqs[i] = gen_AB_nonlinear_eq(ab_vecs[i:i+3])
-        print(ab_eqs[i])
     
-    return np.concatenate((linear_equations[0], r_eqs, ab_eqs))
+    print(linear_equations.size)
+    print(r_eqs.size)
+    print(ab_eqs.size)
+    return np.concatenate((linear_equations, r_eqs, ab_eqs, np.array([driving_expression])))
 
