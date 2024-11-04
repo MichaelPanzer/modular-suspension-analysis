@@ -1,6 +1,6 @@
 import numpy as np
 import scipy as sp
-import sympy as symp
+import sympy 
 
 
 def __gen_P_W__():
@@ -63,29 +63,34 @@ def solve_linear(P, A):
     return u, A
 
 
-""""
+
 def gen_AB_nonlinear_eq(vars):
-    AB_x, AB_y, AB_z = vars
-
-    beta = np.arccos(AB_z)
-    alpha = np.arcsin(AB_y/np.sin(beta))
-
-    AB_x = np.cos(alpha)*np.sin(beta)
+    alpha, beta = vars
+ 
+    AB_x = sympy.cos(alpha) * sympy.sin(beta)
+    AB_y = sympy.sin(alpha) * sympy.sin(beta)
+    AB_z = sympy.cos(beta)
+    
     return AB_x, AB_y, AB_z
 
 
 def gen_R_nonlinear_eq(vars):
-    r_0,r_1,r_2,r_3,r_4,r_5,r_6,r_7,r_8 = vars
+    theta, phi, gamma = vars
 
-    phi = np.arcsin(-1*r_2)
-    theta = np.arcsin(r_5/np.cos(phi))
-    gamma = np.arcsin(r_2/np.cos(phi))
+    r_x = np.array([[1, 0, 0],
+                    [0, sympy.cos(theta), -1*sympy.sin(theta)],
+                    [0, sympy.sin(theta), sympy.cos(theta)]])
+    r_y = np.array([[sympy.cos(phi), 0, sympy.sin(phi)],
+                    [0, 1, 0],
+                    [-1*sympy.sin(phi), 0, sympy.cos(phi)]])
+    r_z = np.array([[sympy.cos(gamma), -1*sympy.sin(gamma), 0],
+                    [sympy.sin(gamma), sympy.cos(gamma), 0],
+                    [0, 0, 1]])
 
-    r_0 = np.cos(phi)*np.cos(gamma)
-    r_1 = np.cos(phi)*np.sin(gamma)
+    r = r_x.dot(r_y).dot(r_z)
 
-    r_3
-    r_4 = np.sin(theta)*np.sin(phi)*np.sin(gamma) + 
+    return r.T.flatten()
+
 """
 def gen_AB_nonlinear_eq(vars):
     AB_x, AB_y, AB_z = vars
@@ -107,23 +112,26 @@ def gen_R_nonlinear_eq(vars):
     eq_5 = r_1*r_2 + r_4*r_5 + r_7*r_8
 
     return np.array([eq_0, eq_1, eq_2, eq_3, eq_4, eq_5])
+"""
 
+def gen_systems_of_equations(x, P, A, driving_expression):
+    x_linear = np.array(sympy.symbols("w_x w_y w_z r_0 r_1 r_2 r_3 r_4 r_5 r_6 r_7 r_8 ab_x_0, ab_y_0, ab_z_0 ab_x_1 ab_y_1 ab_z_1 ab_x_2 ab_y_2 ab_z_2 ab_x_3 ab_y_3 ab_z_3 ab_x_4 ab_y_4 ab_z_4"))
 
-def equations(x, P, A, driving_expression):
+    x_linear[3:12] = gen_R_nonlinear_eq(x[3:6])
+    #print(x_linear)
+    #print("\n")
+
+    ab_vecs = x_linear[12:]
+    ab_angles = x[6:]
+
+    for i in range(5):
+        ab_vecs[3*i:3*i+3] = gen_AB_nonlinear_eq((ab_angles[2*i], ab_angles[2*i+1]))
     
-    linear_equations = ((np.dot(P, x)).T - A.T)[0]
+    #print(x_linear)
+    #print("\n")
 
-    r_vec = x[3:12]
-    r_eqs = gen_R_nonlinear_eq(r_vec)
-
-    ab_eqs = np.zeros(5, dtype=object)
-    ab_vecs = x[12:]
-
-    for i, eq in enumerate(ab_eqs):
-        ab_eqs[i] = gen_AB_nonlinear_eq(ab_vecs[i:i+3])
     
-    #print(linear_equations.size)
-    #print(r_eqs.size)
-    #print(ab_eqs.size)
-    return np.concatenate((linear_equations, r_eqs, ab_eqs, np.array([driving_expression])))
+    linear_equations = ((np.dot(P, x_linear)).T - A.T)[0]
+
+    return np.concatenate((linear_equations, np.array([driving_expression])))
 
