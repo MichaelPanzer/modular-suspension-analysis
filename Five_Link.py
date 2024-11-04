@@ -122,8 +122,8 @@ def equations(x, P, A, driving_expression):
     for i, eq in enumerate(ab_eqs):
         ab_eqs[i] = gen_AB_nonlinear_eq(ab_vecs[i:i+3])
     
-    print(linear_equations.size)
-    print(r_eqs.size)
-    print(ab_eqs.size)
+    #print(linear_equations.size)
+    #print(r_eqs.size)
+    #print(ab_eqs.size)
     return np.concatenate((linear_equations, r_eqs, ab_eqs, np.array([driving_expression])))
 

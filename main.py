@@ -30,8 +30,7 @@ driving_expression = x[2] - 0
 
 
 def equations(vars):
-    x = vars
-    return fl.equations(x, P_mat, A_vec, driving_expression)
+    return fl.equations(vars, P_mat, A_vec, driving_expression)
 
 x_0 = np.array([5,0,0,
                 1,0,0,
@@ -43,7 +42,11 @@ x_0 = np.array([5,0,0,
                 1,0,0,
                 1,0,0])
 
-sol = sp.optimize.fsolve(equations, x_0)
 
+#print(equations(x))
+
+sol = sympy.nsolve(equations(x), x,  x_0)
+
+#sol = equations(x_0)
 print(sol)
 
