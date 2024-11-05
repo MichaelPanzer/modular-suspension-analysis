@@ -114,8 +114,11 @@ def gen_R_nonlinear_eq(vars):
     return np.array([eq_0, eq_1, eq_2, eq_3, eq_4, eq_5])
 """
 
-def gen_systems_of_equations(x, P, A, driving_expression):
-    x_linear = np.array(sympy.symbols("w_x w_y w_z r_0 r_1 r_2 r_3 r_4 r_5 r_6 r_7 r_8 ab_x_0, ab_y_0, ab_z_0 ab_x_1 ab_y_1 ab_z_1 ab_x_2 ab_y_2 ab_z_2 ab_x_3 ab_y_3 ab_z_3 ab_x_4 ab_y_4 ab_z_4"))
+def gen_systems_of_equations(x, P, A, driving_var, value):
+    #x_linear = np.array(sympy.symbols("w_x w_y w_z r_0 r_1 r_2 r_3 r_4 r_5 r_6 r_7 r_8 ab_x_0, ab_y_0, ab_z_0 ab_x_1 ab_y_1 ab_z_1 ab_x_2 ab_y_2 ab_z_2 ab_x_3 ab_y_3 ab_z_3 ab_x_4 ab_y_4 ab_z_4"))
+    x_linear = np.zeros(27)
+    
+    x_linear[0:3] = x[0:3]
 
     x_linear[3:12] = gen_R_nonlinear_eq(x[3:6])
     #print(x_linear)
@@ -133,5 +136,7 @@ def gen_systems_of_equations(x, P, A, driving_expression):
     
     linear_equations = ((np.dot(P, x_linear)).T - A.T)[0]
 
+    driving_expression = x[driving_var] - value
+    
     return np.concatenate((linear_equations, np.array([driving_expression])))
 

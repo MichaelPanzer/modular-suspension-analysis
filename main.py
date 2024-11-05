@@ -29,25 +29,27 @@ A_vec = fl.gen_A(frame_pickups)
 x = np.array(sympy.symbols("w_x w_y w_z theta phi gamma alpha_0 beta_0 alpha_1 beta_1 alpha_2 beta_2 alpha_3 beta_3 alpha_4 beta_4"))
 
 
-def equations(vars, driving_expression):
-    return fl.gen_systems_of_equations(vars, P_mat, A_vec, driving_expression)
+
 
 #print(equations(x, x[2]-69))
 
-def w_x(z):
+def w_x(z, P, A):
     x_0 = np.array([5,0,0,
-                1,0,z,
+                1,0,1,
                 0.01,0.01,
                 0.01,-0.01,
                 -0.01,0.01,
                 -0.1,-0.1,
                 0.1,0.1,])
     
-    driving_expression = x[2] - z
+    driving_var = 2
+    
+    def system(vars):
+        return fl.gen_systems_of_equations(vars, P, A, driving_var, z)
 
-    return sp.optimize.fsolve(sympy.lambdify(x, equations(x, driving_expression)),  x_0)[0]
+    return sp.optimize.fsolve(system, x_0)
 
-print(w_x(0.0))
+print(w_x(0.0, P_mat, A_vec))
 
 #z_vals = np.linspace(-2, 2, 10)
 
