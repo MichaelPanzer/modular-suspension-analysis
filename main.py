@@ -54,8 +54,8 @@ def solution(z, P, A):
 x = solution(0.1, P_mat, A_vec)
 
 #converts radian output to degrees
-for i, angle  in enumerate(x[2:]):
-    x[i+2] = math.degrees(angle)%360
+for i, angle  in enumerate(x[3:]):
+    x[i+3] = math.degrees(angle)%360
 
 print(x)
 
