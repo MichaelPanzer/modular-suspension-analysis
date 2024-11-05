@@ -15,12 +15,18 @@ frame_pickups = np.array([[0,1,1],
                           [0,-1,-1],
                           [0,1,-1],
                           [0,1,0]])
-
+"""
 upright_pickups = np.array([[0,1,1],
                           [0,-1,1],
                           [0,-1,-1],
                           [0,1,-1],
                           [0,1,0]])
+"""
+upright_pickups = np.array([[0,0.9,0.9],
+                          [0,-0.9,0.9],
+                          [0,-0.9,-0.9],
+                          [0,0.9,-0.9],
+                          [0,0.9,0]])
 
 
 P_mat = fl.gen_P(upright_pickups, link_lengths)
@@ -36,13 +42,13 @@ A_vec = fl.gen_A(frame_pickups)
 #print(equations(x, x[2]-69))
 
 def solution(z, P, A):
-    x_0 = np.array([0,0,0,
+    x_0 = np.array([5,0,0,
                 0,0,0,
-                0.01,0.01,
-                0.01,-0.01,
-                -0.01,0.01,
-                -0.1,-0.1,
-                0.1,0.1])
+                0.00,0.00,
+                0.00,0.00,
+                0.00,0.00,
+                0.00,0.00,
+                0.00,0.00])
     
     driving_var = 2
     
@@ -51,7 +57,7 @@ def solution(z, P, A):
 
     return sp.optimize.fsolve(system, x_0)
 
-x = solution(0.1, P_mat, A_vec)
+x = solution(1, P_mat, A_vec)
 
 #converts radian output to degrees
 for i, angle  in enumerate(x[3:]):
@@ -60,13 +66,3 @@ for i, angle  in enumerate(x[3:]):
 print(x)
 
 #z_vals = np.linspace(-2, 2, 10)
-
-"""
-x_vals = w_x(z_vals)
-
-print(z_vals)
-print(x_vals)
-
-plt.plot(z_vals, x_vals)
-plt.show()
-"""
