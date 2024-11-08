@@ -1,5 +1,5 @@
 import numpy as np
-import five_link
+from five_link import Five_Link
 
 
 def test_P_W():
@@ -19,7 +19,8 @@ def test_P_W():
                                [0,1,0],
                                [0,0,1]])
     
-    assert np.array_equal(five_link.__gen_P_W__(), correct_output)
+    fl = Five_Link()
+    assert np.array_equal(fl.__gen_P_W__(), correct_output)
 
 def test_P_R():
     upright_pickups = np.array([[1,2,3],
@@ -43,7 +44,9 @@ def test_P_R():
                                [13,0,0,14,0,0,15,0,0],
                                [0,13,0,0,14,0,0,15,0],
                                [0,0,13,0,0,14,0,0,15]])
-    assert np.array_equal(five_link.__gen_P_R__(upright_pickups), correct_output)
+    fl = Five_Link()
+
+    assert np.array_equal(fl.__gen_P_R__(upright_pickups), correct_output)
 
 def test_P_AB():
     lengths = np.array([21,22,23,24,25])
@@ -63,7 +66,9 @@ def test_P_AB():
                                [0,0,0,0,0,0,0,0,0,0,0,0,-25,0,0],
                                [0,0,0,0,0,0,0,0,0,0,0,0,0,-25,0],
                                [0,0,0,0,0,0,0,0,0,0,0,0,0,0,-25]])
-    assert np.array_equal(five_link.__gen_P_AB__(lengths), correct_output)
+    fl = Five_Link()
+    
+    assert np.array_equal(fl.__gen_P_AB__(lengths), correct_output)
 
 def test_P():
     upright_pickups = np.array([[1,2,3],
@@ -90,8 +95,9 @@ def test_P():
                                [0,1,0, 0,13,0,0,14,0,0,15,0, 0,0,0,0,0,0,0,0,0,0,0,0,0,-25,0],
                                [0,0,1, 0,0,13,0,0,14,0,0,15, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,-25] ])
  
+    fl = Five_Link()
     
-    assert np.array_equal(five_link.gen_P(upright_pickups, lengths), correct_output)
+    assert np.array_equal(fl.gen_P(upright_pickups, lengths), correct_output)
 
 
 
@@ -118,7 +124,9 @@ def test_A():
                                 [44],
                                 [45]])
 
-    assert five_link.gen_A(frame_pickups).all() == correct_output.all()
+    fl = Five_Link()
+
+    assert fl.gen_A(frame_pickups).all() == correct_output.all()
 
 def test_linear_solve():
     P = np.array([[1,5,1,1,1], 
@@ -134,8 +142,9 @@ def test_linear_solve():
     #correct_driving_colum = np.atleast_2d(np.array([5, 2.5])).T
     correct_A = np.atleast_2d(np.array([2,4])).T
 
+    fl = Five_Link()
 
-    u, A = five_link.solve_linear(P, A)
+    u, A = fl.solve_linear(P, A)
 
 
     assert np.array_equal(A, correct_A) and np.array_equal(u, correct_upper_matrix)
