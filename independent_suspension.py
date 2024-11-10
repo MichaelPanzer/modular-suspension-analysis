@@ -1,14 +1,27 @@
 
+class Kinematic_Model:
+    def __init__(self, linkages, wheel_carrier):
+        self.linkages = linkages
+        self.wheel_carrier = wheel_carrier
 
-class Suspension_System:...
+        #check mobility and thow error if not properly defined
 
-class Single_Link:...
+        self.linear_system, self.frame_pickups = self.__generate_linear_system__()
 
-class A_Arm:...
+    @classmethod
+    def from_file(self, file_name):
+        pass
+        
+    def __generate_linear_system__(self):
+        pass
 
-class H_Arm:...
+    def __generate_nonlinear_equations__(self):
+        pass
+    
+    def full_system_of_equations(self, driving_var, driving_value):
+        pass
 
-class Strut:...
+    def render(self):
+        pass
 
-class Trailing_Arm:...
-
+    
