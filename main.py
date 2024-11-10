@@ -29,18 +29,11 @@ upright_pickups = np.array([[0,0.9,0.9],
                           [0,0.9,0]])
 
 
-P_mat = fl.gen_P(upright_pickups, link_lengths)
-
-A_vec = fl.gen_A(frame_pickups)
-
 five_link = fl.Five_Link(link_lengths, frame_pickups, upright_pickups)
-
-
-
 
 #print(equations(x, x[2]-69))
 
-def solution(z, P, A):
+def solution(z, system):
     x_0 = np.array([5,0,0,
                 0,0,0,
                 0.00,0.00,
@@ -52,11 +45,11 @@ def solution(z, P, A):
     driving_var = 2
     
     def system(vars):
-        return fl.gen_systems_of_equations(vars, P, A, driving_var, z)
+        return five_link.gen_systems_of_equations(vars, driving_var, z)
 
     return sp.optimize.fsolve(system, x_0)
 
-x = solution(1, P_mat, A_vec)
+x = solution(1, five_link)
 
 #converts radian output to degrees
 for i, angle  in enumerate(x[3:]):

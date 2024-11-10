@@ -6,13 +6,6 @@ import csv
 
 
 class Five_Link:
-
-    def __init__(self):
-    
-        self.link_lengths = np.zeros(5)
-        self.frame_pickups = np.array([5,3])
-        self.upright_pickups = np.zeros([5,3])
-
     def __init__(self, link_lengths, frame_pickups, upright_pickups):
     
         self.link_lengths = link_lengths
@@ -22,7 +15,8 @@ class Five_Link:
         self.P = self.gen_P()
         self.A = self.gen_A()
 
-    def __init__(self, file_name):
+    @classmethod
+    def from_file(self, file_name):
         
         self.link_lengths = np.zeros(5)
         self.frame_pickups = np.array([5,3])
@@ -47,7 +41,7 @@ class Five_Link:
                             "W_y": 1,
                             "W_z": 2 }
     
-    def __gen_P_W__():
+    def __gen_P_W__(self):
         #output = np.zeros((5,1), dtype=np.ndarray)
 
         output = [[np.identity(3)]*1]*5
@@ -57,12 +51,12 @@ class Five_Link:
 
         return np.block(output)
 
-    def __gen_P_R__(upright_pickups):
+    def __gen_P_R__(self):
         output = np.zeros((5,3), dtype=np.ndarray)
         #output = [[np.identity(3)] * 3] *5
 
         #each block is a pickup coordinate * the identity matrix
-        for i, pickup_n in enumerate(upright_pickups) :
+        for i, pickup_n in enumerate(self.upright_pickups) :
             for j, pickup_coord in enumerate(pickup_n):
                 #print(output[i, j])
                 output[i, j] = pickup_coord*np.identity(3)
@@ -70,18 +64,18 @@ class Five_Link:
         #combines the block matrix
         return np.block(output.tolist())
 
-    def __gen_P_AB__(lengths):
-        output = np.zeros(lengths.size * 3)
+    def __gen_P_AB__(self):
+        output = np.zeros(self.link_lengths.size * 3)
         #output = [] * (lengths.size*3)
 
-        for i, length in enumerate(lengths):
+        for i, length in enumerate(self.link_lengths):
             for j in range(3*i, 3*i+3):
                 output[j] = -1*length
         # swap colums arorund
         return np.diag(output)
 
     def gen_P(self):
-        return np.block([self.__gen_P_W__(), self.__gen_P_R__(self.upright_pickups), self.__gen_P_AB__(self.link_lengths)])
+        return np.block([self.__gen_P_W__(), self.__gen_P_R__(), self.__gen_P_AB__()])
 
     def gen_A(self):    
         return np.atleast_2d(np.ravel(self.frame_pickups)).T
@@ -102,7 +96,7 @@ class Five_Link:
         #print(l, u, A)
         return u, A
 
-    def gen_AB_nonlinear_eq(vars):
+    def gen_AB_nonlinear_eq(self, vars):
         alpha, beta = vars
     
         AB_x = sympy.cos(alpha) * sympy.cos(beta)
@@ -111,7 +105,7 @@ class Five_Link:
         
         return AB_x, AB_y, AB_z
 
-    def gen_R_nonlinear_eq(vars):
+    def gen_R_nonlinear_eq(self, vars):
         theta, phi, gamma = vars
 
         r_x = np.array([[1, 0, 0],
