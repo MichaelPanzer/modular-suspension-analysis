@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import numpy as np
-import scipy.spatial
 
+#TODO try to find a better class structure because linakge and wheel carrier have the same methods
 class Linkage(ABC):
     @abstractmethod
     def local_A_matrix(self):
@@ -15,14 +15,13 @@ class Linkage(ABC):
     def render(self, vars):
         pass
 
-#these methods might not be it, more work to be done
 class Wheel_Carrier(ABC):
     @abstractmethod
     def local_A_matrix(self):
         pass
 
     @abstractmethod
-    def nonlin_x_expression(self):
+    def nonlin_x_expression(self, vars):
         pass
 
     @abstractmethod

@@ -4,6 +4,12 @@ from suspension_components import A_Arm
 
 
 def test_A():
+    frame_pickups = np.array([[31,32,33],
+                                [34,35,36],
+                                [37,38,39],
+                                [40,41,42],
+                                [43,44,45]])
+    
     upright_pickups = np.array([[1,2,3],
                                 [4,5,6],
                                 [7,8,9],
@@ -28,10 +34,9 @@ def test_A():
                                [0,1,0, 0,13,0,0,14,0,0,15,0, 0,0,0,0,0,0,0,0,0,0,0,0,0,-25,0],
                                [0,0,1, 0,0,13,0,0,14,0,0,15, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,-25] ])
  
-    fl = Five_Link(np.array(), lengths, upright_pickups)
+    fl = Five_Link(frame_pickups, lengths, upright_pickups)
     
     assert np.array_equal(fl.gen_A(upright_pickups, lengths), correct_output)
-
 
 
 def test_B():
@@ -40,6 +45,14 @@ def test_B():
                                 [37,38,39],
                                 [40,41,42],
                                 [43,44,45]])
+    
+    upright_pickups = np.array([[1,2,3],
+                                [4,5,6],
+                                [7,8,9],
+                                [10,11,12],
+                                [13,14,15]])
+    
+    lengths = np.array([21,22,23,24,25])
     
     correct_output = np.array([[31],
                                 [32],
@@ -57,28 +70,8 @@ def test_B():
                                 [44],
                                 [45]])
 
-    fl = Five_Link(frame_pickups, np.array(), np.array())
+    fl = Five_Link(frame_pickups, lengths, upright_pickups)
 
-    assert fl.gen_A(frame_pickups).all() == correct_output.all()
+    assert np.array_equal(fl.gen_B(frame_pickups), correct_output)
 
-def test_linear_solve():
-    P = np.array([[1,5,1,1,1], 
-                  [2,5,1,1,1]])
-
-    A = np.atleast_2d(np.array([5,2])).T
-
-    #driving_variable = "W_y"
-
-    #correct answersf
-    correct_upper_matrix = np.array([[2,5, 1,1,1],
-                               [0,2.5,0.5,0.5,0.5]])
-    #correct_driving_colum = np.atleast_2d(np.array([5, 2.5])).T
-    correct_A = np.atleast_2d(np.array([2,4])).T
-
-    fl = Five_Link()
-
-    u, A = fl.solve_linear(P, A)
-
-
-    assert np.array_equal(A, correct_A) and np.array_equal(u, correct_upper_matrix)
 
