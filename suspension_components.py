@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 import numpy as np
+import scipy.spatial
 
 class Linkage(ABC):
     @abstractmethod
@@ -17,11 +18,15 @@ class Linkage(ABC):
 #these methods might not be it, more work to be done
 class Wheel_Carrier(ABC):
     @abstractmethod
-    def rotation_matrix(self):
+    def local_A_matrix(self):
         pass
-    
+
     @abstractmethod
-    def wheel_position_matrix(self):
+    def nonlin_x_expression(self):
+        pass
+
+    @abstractmethod
+    def render(self, vars):
         pass
 
 #right tests for these methods
@@ -90,18 +95,44 @@ class Strut:...
 
 class Trailing_Arm:...
 
-#add methods here 
 class Upright(Wheel_Carrier):
     def __init__(self, pickups):
         self.pickups = pickups
-        self.pickup_count = pickups.len()
+        self.pickup_count = pickups.shape[0]
     
     #override
-    def rotation_matrix(theta, phi, gamma):
-        ... #TODO copy from other thingy
+    def local_A_matrix(self):
+        #TODO A_pickups generation code can definitely be improved
+        A_pickups = np.zeros(shape=self.pickups.shape, dtype= np.ndarray)
+
+        for i, pickup in enumerate(self.pickups):
+            for j, pickup_coord in enumerate(pickup):
+                A_pickups[i,j] = pickup_coord*np.identity(3)
+
+        A_pickups = np.block(A_pickups.tolist())
+        A_wheel = np.block([np.identity(3)]*self.pickup_count)
+
+        return np.block([A_wheel, A_pickups])
     
     #override
-    def wheel_position_matrix(self):
-        A_pickup = np.dot(np.identity, self.pickups)
-        A_wheel = np.array([np.identity*self.pickup_count])
-        return A_wheel, A_pickup
+    def nonlin_x_expression(self, vars):
+        wheel_x, wheel_y, wheel_z, theta, phi, gamma = vars
+
+        #TODO this whole thing can be made so much more efficent
+        r_x = np.array([[1, 0, 0],
+                        [0, np.cos(theta), -1*np.sin(theta)],
+                        [0, np.sin(theta), np.cos(theta)]])
+        r_y = np.array([[np.cos(phi), 0, np.sin(phi)],
+                        [0, 1, 0],
+                        [-1*np.sin(phi), 0, np.cos(phi)]])
+        r_z = np.array([[np.cos(gamma), -1*np.sin(gamma), 0],
+                        [np.sin(gamma), np.cos(gamma), 0],
+                        [0, 0, 1]])
+
+        r = (r_x.dot(r_y).dot(r_z)).T.flatten()
+         
+        return np.concatenate([[wheel_x, wheel_y, wheel_z], r.tolist()])
+
+    #override
+    def render(self):
+        ...#TODO implement this BS

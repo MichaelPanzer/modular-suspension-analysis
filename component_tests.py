@@ -34,3 +34,17 @@ def test_Single_Link_length_dosent_change():
     final_pos = np.dot(local_A_mat, np.atleast_2d(nonlin_vector).T)
 
     assert len == pytest.approx(np.sqrt(np.sum(final_pos**2)))
+
+def test_Upright_lengths_dont_change():
+    upright_pickups = np.array([[1,2,3]])
+    upright = Upright(upright_pickups)
+
+    theta = 2
+    phi = 1
+    gamma = 1.5
+
+    local_A = upright.local_A_matrix()
+
+    x = upright.nonlin_x_expression((0,0,0, theta, phi, gamma))
+
+    assert np.sum(np.dot(local_A, x)**2) == pytest.approx(np.sum(upright_pickups**2))

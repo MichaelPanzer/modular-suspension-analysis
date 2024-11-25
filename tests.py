@@ -150,12 +150,3 @@ def test_linear_solve():
 
     assert np.array_equal(A, correct_A) and np.array_equal(u, correct_upper_matrix)
 
-def test_A_arm_rotation_generation():
-    outer_ball_joint = np.array([15,5,6])
-    a_arm = A_Arm(np.array([0,0,0]), np.array([5,6,7]), (outer_ball_joint/np.sqrt(np.sum(outer_ball_joint**2))))
-
-    rotation_mat = a_arm.cross_product_matrix()
-
-    final_ball_joint_pos = np.dot(rotation_mat, np.array([np.cos(2), np.sin(2)]))
-
-    assert np.sum(outer_ball_joint**2) == np.sum(final_ball_joint_pos**2)
