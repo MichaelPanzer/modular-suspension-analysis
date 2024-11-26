@@ -35,15 +35,11 @@ class Five_Link(Kinematic_Model):
         for i, link in enumerate(linkages):
             linkages[i] = Single_Link(frame_pickups[i], link_lengths[i])
 
-        self.linkages = linkages
-        self.wheel_carrier = Upright(upright_pickups)
+        upright = Upright(upright_pickups)
+        super.__init__(linkages, upright)
 
-        self.linear_system, self.frame_pickups = self.__generate_linear_system__()
+
     
-    #override
-    def gen_A_and_B():
-        A_wheel, A_upright_pickups = super.wheel_carrier.wheel_position_matrix()
-        A_links = ... #TODO add loop to generate vector of link equations
-        A_matrix = np.block(A_wheel, A_upright_pickups, A_links)
+
         
     
