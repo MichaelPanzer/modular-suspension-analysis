@@ -1,5 +1,6 @@
 import numpy as np
 from suspension_components import *
+from scipy.linalg import block_diag
 
 
 class Kinematic_Model:
@@ -13,9 +14,17 @@ class Kinematic_Model:
         pass
 
     def gen_A_and_B(self):
-        A_wheel, A_upright_pickups = self.wheel_carrier.wheel_position_matrix()
-        link_local_A_vector = np.array(self.linkages.local_A()) #???
-        A_matrix = np.block(A_wheel, A_upright_pickups, A_links)
+        wheelcarrier_local_A = self.wheel_carrier.local_A_matrix()
+        link_local_A = np.zeros(self.linkages.size, dtype=np.ndarray)
+
+        for i, linkage in enumerate(self.linkages):
+            link_local_A[i] = linkage.local_A_matrix()
+
+        A_links = block_diag(*link_local_A)
+
+
+        A_matrix = np.block([wheelcarrier_local_A, A_links])
+        
         
         return A_matrix, np.array([0])
     
@@ -36,7 +45,8 @@ class Five_Link(Kinematic_Model):
             linkages[i] = Single_Link(frame_pickups[i], link_lengths[i])
 
         upright = Upright(upright_pickups)
-        super.__init__(linkages, upright)
+
+        super(Five_Link, self).__init__(linkages, upright)
 
 
     

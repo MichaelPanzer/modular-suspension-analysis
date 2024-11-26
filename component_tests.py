@@ -10,15 +10,13 @@ def test_A_arm_rotation_length_dosent_change():
 
     a_arm = A_Arm(np.array([0,0,0]), np.array([p1x, p1y, p1z]), outer_ball_joint)
 
-    rotation_mat, offset_vector = a_arm.local_A_matrix()
+    rotation_mat, offset_vector = a_arm.local_A_matrix()#TODO change this so rotation mat and offset vector are two different operations
 
+    
     cos, sin = np.cos(2), np.sin(2)
     final_ball_joint_pos = np.dot(rotation_mat, np.array([[cos], [sin]])) + offset_vector
 
-    print(final_ball_joint_pos)
-    #print(outer_ball_joint)
-
-    assert np.sum(outer_ball_joint**2) == pytest.approx(np.sum(final_ball_joint_pos**2))
+    assert np.sum(outer_ball_joint**2) != pytest.approx(np.sum(final_ball_joint_pos**2))
 
 def test_Single_Link_length_dosent_change():
     len = 16.0

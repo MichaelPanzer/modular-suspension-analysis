@@ -37,6 +37,8 @@ def test_A():
     fl = Five_Link(frame_pickups, lengths, upright_pickups)
     
     A, B = fl.gen_A_and_B()
+
+    print(A)
     assert np.array_equal(A, correct_output)
 
 
@@ -72,7 +74,7 @@ def test_B():
                                 [45]])
 
     fl = Five_Link(frame_pickups, lengths, upright_pickups)
-    
+
     A, B = fl.gen_A_and_B()
     assert np.array_equal(B, correct_output)
 

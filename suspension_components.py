@@ -1,5 +1,8 @@
 from abc import ABC, abstractmethod
 import numpy as np
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
 
 #TODO try to find a better class structure because linakge and wheel carrier have the same methods
 class Linkage(ABC):
@@ -36,7 +39,7 @@ class Single_Link(Linkage):
     
     #override
     def local_A_matrix(self):
-        return self.length*np.identity(3)
+        return -1*self.length*np.identity(3)
     
     #override
     def nonlin_x_expression(self, vars):
@@ -102,6 +105,8 @@ class Upright(Wheel_Carrier):
     #override
     def local_A_matrix(self):
         #TODO A_pickups generation code can definitely be improved
+        A_wheel = np.block([[np.identity(3)]]*self.pickup_count)
+
         A_pickups = np.zeros(shape=self.pickups.shape, dtype= np.ndarray)
 
         for i, pickup in enumerate(self.pickups):
@@ -109,7 +114,6 @@ class Upright(Wheel_Carrier):
                 A_pickups[i,j] = pickup_coord*np.identity(3)
 
         A_pickups = np.block(A_pickups.tolist())
-        A_wheel = np.block([np.identity(3)]*self.pickup_count)
 
         return np.block([A_wheel, A_pickups])
     
