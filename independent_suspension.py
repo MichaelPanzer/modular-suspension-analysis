@@ -3,31 +3,26 @@ from suspension_components import *
 
 
 class Kinematic_Model:
+
     def __init__(self, linkages, wheel_carrier):
         self.linkages = linkages
         self.wheel_carrier = wheel_carrier
+        #self.linear_system, self.frame_pickups = self.__generate_linear_system__()
 
-        #check mobility and thow error if not properly defined
-
-        self.linear_system, self.frame_pickups = self.__generate_linear_system__()
-
-    @classmethod
     def from_file(self, file_name):
         pass
+
+    def gen_A_and_B(self):
+        A_wheel, A_upright_pickups = self.wheel_carrier.wheel_position_matrix()
+        link_local_A_vector = np.array(self.linkages.local_A()) #???
+        A_matrix = np.block(A_wheel, A_upright_pickups, A_links)
+        
+        return A_matrix, np.array([0])
     
-    @classmethod
-    def __generate_linear_system__(self):
-        pass
-    
-    @classmethod
+
     def __generate_nonlinear_equations__(self):
         pass
     
-    @classmethod
-    def full_system_of_equations(self, driving_var, driving_value):
-        pass
-
-    @classmethod
     def render(self):
         pass
 
@@ -40,12 +35,13 @@ class Five_Link(Kinematic_Model):
         for i, link in enumerate(linkages):
             linkages[i] = Single_Link(frame_pickups[i], link_lengths[i])
 
-        upright = Upright(upright_pickups)
+        self.linkages = linkages
+        self.wheel_carrier = Upright(upright_pickups)
 
-        super.__init__(linkages, upright)
+        self.linear_system, self.frame_pickups = self.__generate_linear_system__()
     
     #override
-    def generate_linear_system():
+    def gen_A_and_B():
         A_wheel, A_upright_pickups = super.wheel_carrier.wheel_position_matrix()
         A_links = ... #TODO add loop to generate vector of link equations
         A_matrix = np.block(A_wheel, A_upright_pickups, A_links)
