@@ -11,6 +11,10 @@ class Linkage(ABC):
         pass
 
     @abstractmethod
+    def local_B_vector(self):
+        pass
+
+    @abstractmethod
     def nonlin_x_expression(self, vars):
         pass
 
@@ -42,6 +46,10 @@ class Single_Link(Linkage):
         return -1*self.length*np.identity(3)
     
     #override
+    def local_B_vector(self):
+        return self.frame_pickup
+    
+    #override
     def nonlin_x_expression(self, vars):
         alpha, beta = vars
         return np.array([np.cos(beta)*np.cos(alpha), np.cos(beta)*np.sin(alpha), np.sin(beta)])   
@@ -54,6 +62,7 @@ class A_Arm(Linkage):
     def __init__(self, frame_pickup_0, frame_pickup_1, ball_joint_pos):
         self.frame_pickup_0 = frame_pickup_0
         self.frame_pickup_1 = frame_pickup_1
+
         self.ball_joint_pos = ball_joint_pos
 
         pickup_1_to_0 = frame_pickup_0-frame_pickup_1
@@ -71,6 +80,10 @@ class A_Arm(Linkage):
                                               [-rotation_axis_unit_vector[0,1],  rotation_axis_unit_vector[0,0],                             0]])
         self.outer_product_matrix = np.dot(rotation_axis_unit_vector.T, rotation_axis_unit_vector)
 
+        #this is the point on the pivot axis where the ball joint position vector is orthogonal to axis
+        self.orthogonal_link_position = np.dot(self.outer_product_matrix, np.atleast_2d(self.ball_joint_pos).T)
+
+
     #override
     def local_A_matrix(self):
         ball_joint_colum_vec = np.atleast_2d(self.ball_joint_pos).T
@@ -78,8 +91,11 @@ class A_Arm(Linkage):
         cos_colum = np.dot((np.identity(3)-self.outer_product_matrix), ball_joint_colum_vec)
         sin_colum = np.dot(self.cross_product_matrix, ball_joint_colum_vec)
 
-        return np.block([cos_colum, sin_colum]), np.dot(self.outer_product_matrix, np.atleast_2d(self.ball_joint_pos).T)
+        return np.block([cos_colum, sin_colum])
     
+    def local_B_vector(self):
+        return self.frame_pickup_0 - self.orthogonal_link_position
+
     #override
     def nonlin_x_expression(self, vars):
         alpha = vars
