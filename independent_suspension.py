@@ -47,18 +47,30 @@ class Kinematic_Model:
         link_angles = vars[6:]
 
         #This is really bad
-        
         i = 0 #link vec index
         j = 0 #link angle index
         for linkage in self.linkages:
             num_nonlin_inputs = 2#TODO make this dependent on the link
             num_nonlin_outputs = 3
-            link_vecs[i:i+num_nonlin_inputs] = linkage.nonlin_x_expression(link_angles[j:j+num_nonlin_inputs]*)
+
+            link_vecs[i:i+num_nonlin_inputs] = linkage.nonlin_x_expression(*link_angles[j:j+num_nonlin_inputs])
 
             i += num_nonlin_inputs
             j += num_nonlin_outputs
 
         return x
+    
+    def full_sys_of_eq(self, vars, driving_var, value):
+        x = self.generate_x_nonlinear(vars)
+
+        nonlin_expressions = np.dot(self.global_A_matrix(), x) - self.global_B_vector()
+
+        driving_expression = x[driving_var] - value
+
+        return np.concatenate((nonlin_expressions, np.array([driving_expression])))
+
+
+
 
 
     
