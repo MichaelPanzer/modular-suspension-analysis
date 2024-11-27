@@ -36,10 +36,9 @@ def test_A():
  
     fl = Five_Link(frame_pickups, lengths, upright_pickups)
     
-    A, B = fl.gen_A_and_B()
+    a = fl.global_A_matrix()
 
-    print(A)
-    assert np.array_equal(A, correct_output)
+    assert np.array_equal(a, correct_output)
 
 
 def test_B():
@@ -75,6 +74,6 @@ def test_B():
 
     fl = Five_Link(frame_pickups, lengths, upright_pickups)
 
-    A, B = fl.gen_A_and_B()
-    assert np.array_equal(B, correct_output)
+    b = fl.global_B_vector()
+    assert np.array_equal(b, correct_output)
 

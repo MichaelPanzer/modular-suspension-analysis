@@ -13,7 +13,7 @@ class Kinematic_Model:
     def from_file(self, file_name):
         pass
 
-    def gen_A_and_B(self):
+    def global_A_matrix(self):
         wheelcarrier_local_A = self.wheel_carrier.local_A_matrix()
         link_local_A = np.zeros(self.linkages.size, dtype=np.ndarray)
 
@@ -26,11 +26,18 @@ class Kinematic_Model:
         A_matrix = np.block([wheelcarrier_local_A, A_links])
         
         
-        return A_matrix, np.array([0])
+        return A_matrix
     
+    def global_B_vector(self):
+        B_vector = np.zeros(self.linkages.size, dtype=np.ndarray)
 
-    def __generate_nonlinear_equations__(self):
-        pass
+        for i, linkage in enumerate(self.linkages):
+            B_vector[i] = linkage.local_B_vector()
+        
+        return np.atleast_2d(np.block(B_vector.tolist())).T
+
+
+
     
     def render(self):
         pass
