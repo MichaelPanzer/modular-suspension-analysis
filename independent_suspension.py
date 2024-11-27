@@ -36,6 +36,29 @@ class Kinematic_Model:
         
         return np.atleast_2d(np.block(B_vector.tolist())).T
 
+    def generate_x_nonlinear(self, vars):
+        x = np.zeros(27) # fix this so it isnt stupid
+
+        x[0:3] = vars[0:3] #wheel x,y,z
+
+        x[3:12] = self.wheel_carrier.nonlin_x_expression(vars[3:6]) #wheel carrier rotation
+
+        link_vecs = x[12:]
+        link_angles = vars[6:]
+
+        #This is really bad
+        
+        i = 0 #link vec index
+        j = 0 #link angle index
+        for linkage in self.linkages:
+            num_nonlin_inputs = 2#TODO make this dependent on the link
+            num_nonlin_outputs = 3
+            link_vecs[i:i+num_nonlin_inputs] = linkage.nonlin_x_expression(link_angles[j:j+num_nonlin_inputs]*)
+
+            i += num_nonlin_inputs
+            j += num_nonlin_outputs
+
+        return x
 
 
     
