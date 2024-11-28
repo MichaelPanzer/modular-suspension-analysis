@@ -64,7 +64,7 @@ class Kinematic_Model:
 
         nonlin_expressions = (np.dot(self.global_A_matrix(), x).T - self.global_B_vector().T)[0]
 
-        print(nonlin_expressions)
+        #print(nonlin_expressions)
 
         driving_expression = x[driving_var] - value
 
