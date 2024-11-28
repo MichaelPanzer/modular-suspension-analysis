@@ -39,9 +39,8 @@ class Kinematic_Model:
     def generate_x_nonlinear(self, vars):
         x = np.zeros(27) # fix this so it isnt stupid
 
-        x[0:3] = vars[0:3] #wheel x,y,z
 
-        x[3:12] = self.wheel_carrier.nonlin_x_expression(vars[3:6]) #wheel carrier rotation
+        x[0:12] = self.wheel_carrier.nonlin_x_expression(vars[0:6]) #wheel carrier position and rotation
 
         link_vecs = x[12:]
         link_angles = vars[6:]
@@ -50,20 +49,22 @@ class Kinematic_Model:
         i = 0 #link vec index
         j = 0 #link angle index
         for linkage in self.linkages:
-            num_nonlin_inputs = 2#TODO make this dependent on the link
             num_nonlin_outputs = 3
+            num_nonlin_inputs = 2 #TODO make this dependent on the link
+                              
+            link_vecs[i:i+num_nonlin_outputs] = linkage.nonlin_x_expression(link_angles[j:j+num_nonlin_inputs])
 
-            link_vecs[i:i+num_nonlin_inputs] = linkage.nonlin_x_expression(*link_angles[j:j+num_nonlin_inputs])
-
-            i += num_nonlin_inputs
-            j += num_nonlin_outputs
+            i += num_nonlin_outputs
+            j += num_nonlin_inputs
 
         return x
     
     def full_sys_of_eq(self, vars, driving_var, value):
         x = self.generate_x_nonlinear(vars)
 
-        nonlin_expressions = np.dot(self.global_A_matrix(), x) - self.global_B_vector()
+        nonlin_expressions = (np.dot(self.global_A_matrix(), x).T - self.global_B_vector().T)[0]
+
+        print(nonlin_expressions)
 
         driving_expression = x[driving_var] - value
 
