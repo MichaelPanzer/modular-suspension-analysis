@@ -48,7 +48,7 @@ def solve_z(z, guess, system):
     driving_var = 2
     
     def function(vars):
-        return system.full_sys_of_eq(vars, driving_var, z)
+        return system.approx_sys_of_eq(vars, driving_var, z)
 
     return sp.optimize.fsolve(function, guess) 
 
@@ -68,7 +68,7 @@ def create_table(inputs, solver, inital_guess, system):
 #creates a table of solutions which can be plotted and analyized 
 x_0 = np.array([ 5, 0, -2, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 
-z_vals = np.linspace(-2, 2, 20)
+z_vals = np.linspace(-2, 2, 200)
 
 positions = create_table(z_vals, solve_z, x_0, fl)
 

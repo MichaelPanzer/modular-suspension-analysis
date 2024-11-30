@@ -59,7 +59,7 @@ class Kinematic_Model:
 
         return x
     
-    def approximate_x_nonlinear(self, vars):
+    def approx_x_nonlinear(self, vars):
         x = np.zeros(27) # fix this so it isnt stupid
 
 
@@ -93,6 +93,17 @@ class Kinematic_Model:
 
         return np.concatenate((nonlin_expressions, np.array([driving_expression])))
 
+    def approx_sys_of_eq(self, vars, driving_var, value):
+            x = self.approx_x_nonlinear(vars)
+
+            nonlin_expressions = (np.dot(self.global_A_matrix(), x).T - self.global_B_vector().T)[0]
+
+            #print(nonlin_expressions)
+
+            driving_expression = x[driving_var] - value
+
+            return np.concatenate((nonlin_expressions, np.array([driving_expression])))
+    
     def jacobian(self, vars, driving_var, value):
         pass
 
