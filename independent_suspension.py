@@ -63,15 +63,14 @@ class Kinematic_Model:
         return x
     
     def approx_x_nonlinear(self, vars):
-        x = np.zeros(27, dtype=type(vars[0])) # fix this so it isnt stupid
-
+        x = np.zeros(27, dtype=type(vars[0])) # fix this so length is dynamic
 
         x[0:12] = self.wheel_carrier.approx_nonlin_x(vars[0:6]) #wheel carrier position and rotation
 
         link_vecs = x[12:]
         link_angles = vars[6:]
 
-        #This is really bad
+        #TODO This is really bad
         i = 0 #link vec index
         j = 0 #link angle index
         for linkage in self.linkages:
@@ -90,8 +89,6 @@ class Kinematic_Model:
 
         nonlin_expressions = (np.dot(self.a_mat, x).T - self.b_vec.T)[0]
 
-        #print(nonlin_expressions)
-
         driving_expression = x[driving_var] - value
 
         return np.concatenate((nonlin_expressions, np.array([driving_expression])))
@@ -107,9 +104,29 @@ class Kinematic_Model:
 
             return np.concatenate((nonlin_expressions, np.array([driving_expression])))
     
-    def jacobian(self, vars, driving_var, value):
-        pass
 
+    #TODO write some fucking tests stoopidhead
+    def jacobian(self, vars, driving_var):
+        jacobians = np.zeros(self.linkages.shape[0] + 1, dtype=np.ndarray)
+        link_angles = vars[6:]
+        jacobians[0] = self.wheel_carrier.jacobian(vars[0:6])
+
+        #the first index is deticated to the wheel jacobian and the last is for the driving var
+        link_jacobians = jacobians[1:]
+        j = 0 #link angle index
+        for i, link in enumerate(self.linkages):
+            num_link_dof = 2 #TODO make this dependent on the type of link involved
+            link_jacobians[i] = link.jacobian(link_angles[j:j+num_link_dof])
+            j+=num_link_dof
+
+
+        #creates a jacobian matrix with the derivative of the driving term =0
+        jacobian_matrix = block_diag(*jacobians)
+
+        driving_var_vector = np.zeros(self.a_mat[0].shape)
+        driving_var_vector[driving_var] = 1
+
+        return np.dot(np.vstack([self.a_mat, driving_var_vector]), jacobian_matrix.T)
 
 
     
@@ -117,7 +134,6 @@ class Kinematic_Model:
         pass
 
 
-#this class is mainly for testing functionality before a more universal class can be made
 class Five_Link(Kinematic_Model):
     def __init__(self, frame_pickups, link_lengths, upright_pickups):
         linkages = np.zeros(5, dtype=Linkage)

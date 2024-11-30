@@ -46,14 +46,17 @@ fl = Five_Link(frame_pickups, link_lengths, upright_pickups)
 #print(equations(x, x[2]-69))
 
 #solves suspension kinematics system of equations in terms of z
-def solve_z(z, guess, system):
+def solve_z(z, guess, model):
     driving_var = 2
     
     def function(vars):
-        return system.full_sys_of_eq(vars, driving_var, z)
+        return model.full_sys_of_eq(vars, driving_var, z)
+    
+    def jacobian(vars):
+        return model.jacobian(vars, driving_var)
 
     
-    return sp.optimize.fsolve(function, guess) 
+    return sp.optimize.fsolve(function, guess, fprime=jacobian) 
 
 #solves for a list of inputs, using each output as a guess for the next solution
 def create_table(inputs, solver, system, inital_guess):
@@ -71,7 +74,7 @@ def create_table(inputs, solver, system, inital_guess):
 
 x_0 = np.array([ 5, 0, -1, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 
-z_vals = np.linspace(-1, 1, 600)
+z_vals = np.linspace(-1, 1, 200)
 
 positions = create_table(z_vals, solve_z, fl, x_0)
 

@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 import numpy as np
-import logging
+from scipy.linalg import block_diag
 
 sin_approx_a = 24/np.pi**4
 cos_approx_a = (60*np.pi**2 - 720) / np.pi**5
@@ -255,7 +255,7 @@ class Upright(Wheel_Carrier):
         dr_dgamma = (r_x.dot(r_y).dot(r_z_prime)).T.flatten()
         
 
-        return np.block(np.diag(wheel_jac, [dr_dtheta, dr_dphi, dr_dgamma]))
+        return block_diag(wheel_jac, [dr_dtheta, dr_dphi, dr_dgamma])
     
     #override
     def render(self):
