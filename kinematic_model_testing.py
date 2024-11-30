@@ -4,6 +4,8 @@ import scipy as sp
 import matplotlib.pyplot as plt
 from matplotlib import rc
 from vpython import points, curve, vector, color
+from sympy.solvers import solve
+from sympy import Symbol
 
 
 #np.set_printoptions(precision=2, suppress=True, linewidth=150)
@@ -48,40 +50,38 @@ def solve_z(z, guess, system):
     driving_var = 2
     
     def function(vars):
-        return system.approx_sys_of_eq(vars, driving_var, z)
+        return system.full_sys_of_eq(vars, driving_var, z)
 
+    
     return sp.optimize.fsolve(function, guess) 
 
 #solves for a list of inputs, using each output as a guess for the next solution
-def create_table(inputs, solver, inital_guess, system):
-    guess = inital_guess
+def create_table(inputs, solver, system, inital_guess):
     
     outputs = np.zeros([len(inputs),len(inital_guess)])
-
+    
+    guess = inital_guess
     for i, input in enumerate(inputs):
-        outputs[i] = solver(input, guess, system)
-        guess = outputs[i]
+            outputs[i] = solver(input, guess, system)
+            guess = outputs[i]
+
 
     return outputs
 
 
-#creates a table of solutions which can be plotted and analyized 
-x_0 = np.array([ 5, 0, -2, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+x_0 = np.array([ 5, 0, -1, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 
-z_vals = np.linspace(-2, 2, 200)
+z_vals = np.linspace(-1, 1, 600)
 
-positions = create_table(z_vals, solve_z, x_0, fl)
+positions = create_table(z_vals, solve_z, fl, x_0)
 
 
 z = positions[:,2]
 
-
 x = positions[:,0]
 y = positions[:,1]
-
 plt.plot(z, x)
 plt.plot(z, y)
-
 plt.legend(["x","y"])
 plt.show()
 
@@ -89,10 +89,8 @@ plt.show()
 caster = positions[:,3]
 camber = positions[:,4]
 toe = positions[:,5]
-
-plt.plot(z, caster)
-plt.plot(z, camber)
-plt.plot(z, toe)
-
+plt.plot(z, caster*180/np.pi)
+plt.plot(z, camber*180/np.pi)
+plt.plot(z, toe*180/np.pi)
 plt.legend(["caster", "camber", "toe"])
 plt.show()

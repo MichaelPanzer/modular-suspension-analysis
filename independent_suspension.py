@@ -1,13 +1,16 @@
 import numpy as np
 from suspension_components import *
 from scipy.linalg import block_diag
-
+from scipy.linalg import lu
 
 class Kinematic_Model:
 
     def __init__(self, linkages, wheel_carrier):
         self.linkages = linkages
         self.wheel_carrier = wheel_carrier
+
+        self.a_mat = self.global_A_matrix()
+        self.b_vec = self.global_B_vector()
         #self.linear_system, self.frame_pickups = self.__generate_linear_system__()
 
     def from_file(self, file_name):
@@ -60,7 +63,7 @@ class Kinematic_Model:
         return x
     
     def approx_x_nonlinear(self, vars):
-        x = np.zeros(27) # fix this so it isnt stupid
+        x = np.zeros(27, dtype=type(vars[0])) # fix this so it isnt stupid
 
 
         x[0:12] = self.wheel_carrier.approx_nonlin_x(vars[0:6]) #wheel carrier position and rotation
@@ -85,7 +88,7 @@ class Kinematic_Model:
     def full_sys_of_eq(self, vars, driving_var, value):
         x = self.generate_x_nonlinear(vars)
 
-        nonlin_expressions = (np.dot(self.global_A_matrix(), x).T - self.global_B_vector().T)[0]
+        nonlin_expressions = (np.dot(self.a_mat, x).T - self.b_vec.T)[0]
 
         #print(nonlin_expressions)
 
@@ -96,7 +99,7 @@ class Kinematic_Model:
     def approx_sys_of_eq(self, vars, driving_var, value):
             x = self.approx_x_nonlinear(vars)
 
-            nonlin_expressions = (np.dot(self.global_A_matrix(), x).T - self.global_B_vector().T)[0]
+            nonlin_expressions = (np.dot(self.a_mat, x).T - self.b_vec.T)[0]
 
             #print(nonlin_expressions)
 
