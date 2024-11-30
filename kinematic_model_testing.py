@@ -66,9 +66,9 @@ def create_table(inputs, solver, inital_guess, system):
 
 
 #creates a table of solutions which can be plotted and analyized 
-x_0 = np.array([ 5, 0, -1, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+x_0 = np.array([ 5, 0, -2, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 
-z_vals = np.linspace(-1, 1, 200)
+z_vals = np.linspace(-2, 2, 20)
 
 positions = create_table(z_vals, solve_z, x_0, fl)
 

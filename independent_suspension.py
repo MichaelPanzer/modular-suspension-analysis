@@ -70,7 +70,8 @@ class Kinematic_Model:
 
         return np.concatenate((nonlin_expressions, np.array([driving_expression])))
 
-
+    def jacobian(self, vars, driving_var, value):
+        pass
 
 
 

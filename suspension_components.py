@@ -2,9 +2,19 @@ from abc import ABC, abstractmethod
 import numpy as np
 import logging
 
-logging.basicConfig(level=logging.DEBUG)
+sin_approx_a = 5
+cos_approx_a = 5
+cos_approx_b = 5
 
-#TODO try to find a better class structure because linakge and wheel carrier have the same methods
+def a_sin(angle):
+    return sin_approx_a*angle
+
+def a_cos(angle):
+    return cos_approx_a*angle**2 + cos_approx_b
+
+
+
+#TODO maybe try to find a better class structure because linakge and wheel carrier have the same methods
 class Linkage(ABC):
     @abstractmethod
     def local_A_matrix(self):
@@ -16,6 +26,10 @@ class Linkage(ABC):
 
     @abstractmethod
     def nonlin_x_expression(self, vars):
+        pass
+
+    @abstractmethod
+    def approx_nonlin_x(self, vars):
         pass
 
     @abstractmethod
@@ -32,10 +46,14 @@ class Wheel_Carrier(ABC):
         pass
 
     @abstractmethod
+    def nonlin_x_expression(self, vars):
+        pass
+
+    @abstractmethod
     def render(self, vars):
         pass
 
-#right tests for these methods
+#wright tests for these methods
 class Single_Link(Linkage):
     def __init__(self, frame_pickup, length):
         self.frame_pickup = frame_pickup
@@ -53,6 +71,10 @@ class Single_Link(Linkage):
     def nonlin_x_expression(self, vars):
         alpha, beta = vars
         return np.array([np.cos(beta)*np.cos(alpha), np.cos(beta)*np.sin(alpha), np.sin(beta)])   
+    
+    def approx_nonlin_x(self, vars):
+        alpha, beta = vars
+        return np.array([a_cos(beta)*a_cos(alpha), a_cos(beta)*a_sin(alpha), a_sin(beta)])
     
     #override TODO
     def render(self):
@@ -99,9 +121,12 @@ class A_Arm(Linkage):
     #override
     def nonlin_x_expression(self, vars):
         alpha = vars
-
         return np.array([np.cos(alpha), np.sin(alpha)])
     
+    #override
+    def approx_nonlin_x(self, vars):
+        alpha = vars
+        return np.array([a_cos(alpha), a_sin(alpha)])
     #override TODO
     def render(self):
         ...
@@ -153,7 +178,26 @@ class Upright(Wheel_Carrier):
         r = (r_x.dot(r_y).dot(r_z)).T.flatten()
          
         return np.concatenate([[wheel_x, wheel_y, wheel_z], r.tolist()])
+    
+    #override
+    def approx_nonlin_x(self, vars):
+        wheel_x, wheel_y, wheel_z, theta, phi, gamma = vars
 
+        #TODO this whole thing can be made so much more efficent
+        r_x = np.array([[1, 0, 0],
+                        [0, a_cos(theta), -1*a_sin(theta)],
+                        [0, a_sin(theta), a_cos(theta)]])
+        r_y = np.array([[a_cos(phi), 0, a_sin(phi)],
+                        [0, 1, 0],
+                        [-1*a_sin(phi), 0, a_cos(phi)]])
+        r_z = np.array([[a_cos(gamma), -1*a_sin(gamma), 0],
+                        [a_sin(gamma), a_cos(gamma), 0],
+                        [0, 0, 1]])
+
+        r = (r_x.dot(r_y).dot(r_z)).T.flatten()
+         
+        return np.concatenate([[wheel_x, wheel_y, wheel_z], r.tolist()])
+    
     #override
     def render(self):
         ...#TODO implement this BS
