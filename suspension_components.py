@@ -32,6 +32,11 @@ class Linkage(ABC):
     def approx_nonlin_x(self, vars):
         pass
 
+
+    @abstractmethod
+    def jacobian(self, vars):
+        pass
+
     @abstractmethod
     def render(self, vars):
         pass
@@ -49,6 +54,9 @@ class Wheel_Carrier(ABC):
     def nonlin_x_expression(self, vars):
         pass
 
+    @abstractmethod
+    def jacobian(self, vars):
+        pass
     @abstractmethod
     def render(self, vars):
         pass
@@ -72,9 +80,16 @@ class Single_Link(Linkage):
         alpha, beta = vars
         return np.array([np.cos(beta)*np.cos(alpha), np.cos(beta)*np.sin(alpha), np.sin(beta)])   
     
+    #override
     def approx_nonlin_x(self, vars):
         alpha, beta = vars
         return np.array([a_cos(beta)*a_cos(alpha), a_cos(beta)*a_sin(alpha), a_sin(beta)])
+    
+    #override
+    def jacobian(self, vars):
+        alpha, beta = vars
+        #returns [[dx/d_alpha],[dx/d_beta]]
+        return np.array([[-np.cos(beta)*np.sin(alpha), np.cos(beta)*np.cos(alpha), np.sin(beta)], [-np.sin(beta)*np.cos(alpha), -np.sin(beta)*np.sin(alpha), np.cos(beta)]])   
     
     #override TODO
     def render(self):
@@ -127,6 +142,12 @@ class A_Arm(Linkage):
     def approx_nonlin_x(self, vars):
         alpha = vars
         return np.array([a_cos(alpha), a_sin(alpha)])
+    
+    #override
+    def jacobian(self, vars):
+        alpha = vars
+        return np.array([-np.sin(alpha), np.cos(alpha)]) 
+
     #override TODO
     def render(self):
         ...
@@ -197,6 +218,44 @@ class Upright(Wheel_Carrier):
         r = (r_x.dot(r_y).dot(r_z)).T.flatten()
          
         return np.concatenate([[wheel_x, wheel_y, wheel_z], r.tolist()])
+    
+        #override
+    def jacobian(self, vars):
+        wheel_x, wheel_y, wheel_z, theta, phi, gamma = vars
+
+        wheel_jac = np.identity(3)
+
+        #TODO this whole thing can be made so much more efficent
+        r_x = np.array([[1, 0, 0],
+                        [0, np.cos(theta), -np.sin(theta)],
+                        [0, np.sin(theta), np.cos(theta)]])
+        
+        r_y = np.array([[np.cos(phi), 0, np.sin(phi)],
+                        [0, 1, 0],
+                        [-np.sin(phi), 0, np.cos(phi)]])
+        
+        r_z = np.array([[np.cos(gamma), -np.sin(gamma), 0],
+                        [np.sin(gamma), np.cos(gamma), 0],
+                        [0, 0, 1]])
+        
+        r_x_prime = np.array([[1, 0, 0],
+                        [0, -np.sin(theta), -np.cos(theta)],
+                        [0, np.cos(theta), -np.sin(theta)]])
+        
+        r_y_prime = np.array([[-np.sin(phi), 0, np.cos(phi)],
+                        [0, 1, 0],
+                        [-np.cos(phi), 0, np.sin(phi)]])
+        
+        r_z_prime = np.array([[-np.sin(gamma), -np.cos(gamma), 0],
+                        [np.cos(gamma), -np.sin(gamma), 0],
+                        [0, 0, 1]])
+
+        dr_dtheta = (r_x_prime.dot(r_y).dot(r_z)).T.flatten()
+        dr_dphi = (r_x.dot(r_y_prime).dot(r_z)).T.flatten()
+        dr_dgamma = (r_x.dot(r_y).dot(r_z_prime)).T.flatten()
+        
+
+        return np.block(np.diag(wheel_jac, [dr_dtheta, dr_dphi, dr_dgamma]))
     
     #override
     def render(self):
