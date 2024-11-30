@@ -59,6 +59,29 @@ class Kinematic_Model:
 
         return x
     
+    def approximate_x_nonlinear(self, vars):
+        x = np.zeros(27) # fix this so it isnt stupid
+
+
+        x[0:12] = self.wheel_carrier.approx_nonlin_x(vars[0:6]) #wheel carrier position and rotation
+
+        link_vecs = x[12:]
+        link_angles = vars[6:]
+
+        #This is really bad
+        i = 0 #link vec index
+        j = 0 #link angle index
+        for linkage in self.linkages:
+            num_nonlin_outputs = 3
+            num_nonlin_inputs = 2 #TODO make this dependent on the link
+                              
+            link_vecs[i:i+num_nonlin_outputs] = linkage.approx_nonlin_x(link_angles[j:j+num_nonlin_inputs])
+
+            i += num_nonlin_outputs
+            j += num_nonlin_inputs
+
+        return x
+    
     def full_sys_of_eq(self, vars, driving_var, value):
         x = self.generate_x_nonlinear(vars)
 
