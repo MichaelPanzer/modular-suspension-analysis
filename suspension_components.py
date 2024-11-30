@@ -2,9 +2,9 @@ from abc import ABC, abstractmethod
 import numpy as np
 import logging
 
-sin_approx_a = 5
-cos_approx_a = 5
-cos_approx_b = 5
+sin_approx_a = 24/np.pi**4
+cos_approx_a = (60*np.pi**2 - 720) / np.pi**5
+cos_approx_b = (60 - 3*np.pi**2) / np.pi**3
 
 def a_sin(angle):
     return sin_approx_a*angle
