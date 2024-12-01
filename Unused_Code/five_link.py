@@ -3,18 +3,6 @@ import scipy as sp
 import sympy 
 import csv 
 
-sin_approx_a = 5
-cos_approx_a = 5
-cos_approx_b = 5
-
-def sin_approx(angle):
-    return sin_approx_a*angle
-
-def cos_approx(angle):
-    return cos_approx_a*angle**2 + cos_approx_b
-
-
-
 
 class Five_Link:
     def __init__(self, link_lengths, frame_pickups, upright_pickups):
