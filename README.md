@@ -11,7 +11,7 @@ A basic 5 link suspension solver has been written.
 
 
 <ins>Todo List</ins>
-- [ ] Rewrite current demo program as a jupyter notebook
+- [x] Rewrite current demo program as a jupyter notebook
 - [ ] Add 3d animations with vpython
 - [ ] Fix indexing in kinematic_model class so that it can work with various types of links
 - [ ] Refactor matrix generation to reduce copying of arrays\
