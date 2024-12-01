@@ -1,4 +1,4 @@
-from independent_suspension import Five_Link
+from suspension_kinematics.independent_suspension import Five_Link
 import numpy as np
 import scipy as sp
 import matplotlib.pyplot as plt

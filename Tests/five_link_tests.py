@@ -1,6 +1,6 @@
 import numpy as np
-from independent_suspension import Five_Link
-from suspension_components import A_Arm
+from suspension_kinematics.independent_suspension import Five_Link
+from suspension_kinematics.components import A_Arm
 from jacobi import jacobi
 
 np.set_printoptions(precision=1, suppress=True, linewidth=150)
