@@ -89,7 +89,7 @@ class Single_Link(Linkage):
     def jacobian(self, vars):
         alpha, beta = vars
         #returns [[dx/d_alpha],[dx/d_beta]]
-        return np.array([[-np.cos(beta)*np.sin(alpha), np.cos(beta)*np.cos(alpha), np.sin(beta)], [-np.sin(beta)*np.cos(alpha), -np.sin(beta)*np.sin(alpha), np.cos(beta)]])   
+        return np.array([[-np.cos(beta)*np.sin(alpha), np.cos(beta)*np.cos(alpha), 0], [-np.sin(beta)*np.cos(alpha), -np.sin(beta)*np.sin(alpha), np.cos(beta)]])   
     
     #override TODO
     def render(self):
@@ -238,17 +238,17 @@ class Upright(Wheel_Carrier):
                         [np.sin(gamma), np.cos(gamma), 0],
                         [0, 0, 1]])
         
-        r_x_prime = np.array([[1, 0, 0],
+        r_x_prime = np.array([[0, 0, 0],
                         [0, -np.sin(theta), -np.cos(theta)],
                         [0, np.cos(theta), -np.sin(theta)]])
-        
+    
         r_y_prime = np.array([[-np.sin(phi), 0, np.cos(phi)],
-                        [0, 1, 0],
-                        [-np.cos(phi), 0, np.sin(phi)]])
+                        [0, 0, 0],
+                        [-np.cos(phi), 0, -np.sin(phi)]])
         
         r_z_prime = np.array([[-np.sin(gamma), -np.cos(gamma), 0],
                         [np.cos(gamma), -np.sin(gamma), 0],
-                        [0, 0, 1]])
+                        [0, 0, 0]])
 
         dr_dtheta = (r_x_prime.dot(r_y).dot(r_z)).T.flatten()
         dr_dphi = (r_x.dot(r_y_prime).dot(r_z)).T.flatten()

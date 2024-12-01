@@ -19,14 +19,14 @@ rc('text', usetex=False)                # disable LaTeX rendering in plots
 rc('font',**{'family':'DejaVu Sans'})   # set the font of the plot to be DejaVu Sans
 
 
-link_lengths = np.atleast_2d(np.array([5,5,5,5,5])).T
+link_lengths = np.atleast_2d(np.array([5,5,5,5,6])).T
 
 #this should lead to entirely paralell links
 frame_pickups = np.array([[0,1,1],
                           [0,-1,1],
                           [0,-1,-1],
                           [0,1,-1],
-                          [0,1,0]])
+                          [0,0.5,0]])
 """
 upright_pickups = np.array([[0,1,1],
                           [0,-1,1],
@@ -38,7 +38,7 @@ upright_pickups = np.array([[0,0.9,0.9],
                           [0,-0.9,0.9],
                           [0,-0.9,-0.9],
                           [0,0.9,-0.9],
-                          [0,0.9,0]])
+                          [0,1.5,0]])
 
 
 fl = Five_Link(frame_pickups, link_lengths, upright_pickups)
@@ -74,7 +74,7 @@ def create_table(inputs, solver, system, inital_guess):
 
 x_0 = np.array([ 5, 0, -1, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 
-z_vals = np.linspace(-1, 1, 200)
+z_vals = np.linspace(-1, 1, 500)
 
 positions = create_table(z_vals, solve_z, fl, x_0)
 

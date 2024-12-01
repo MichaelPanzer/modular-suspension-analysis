@@ -1,23 +1,27 @@
 import numpy as np
 from independent_suspension import Five_Link
 from suspension_components import A_Arm
+from jacobi import jacobi
 
+np.set_printoptions(precision=1, suppress=True, linewidth=150)
 
-def test_A():
-    frame_pickups = np.array([[31,32,33],
+frame_pickups = np.array([[31,32,33],
                                 [34,35,36],
                                 [37,38,39],
                                 [40,41,42],
                                 [43,44,45]])
-    
-    upright_pickups = np.array([[1,2,3],
-                                [4,5,6],
-                                [7,8,9],
-                                [10,11,12],
-                                [13,14,15]])
-    
-    lengths = np.array([21,22,23,24,25])
 
+upright_pickups = np.array([[1,2,3],
+                            [4,5,6],
+                            [7,8,9],
+                            [10,11,12],
+                            [13,14,15]])
+
+lengths = np.array([21,22,23,24,25])
+
+
+
+def test_A():
     correct_output = np.array([[1,0,0, 1,0,0,2,0,0,3,0,0,    -21,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
                                [0,1,0, 0,1,0,0,2,0,0,3,0,    0,-21,0,0,0,0,0,0,0,0,0,0,0,0,0],
                                [0,0,1, 0,0,1,0,0,2,0,0,3,    0,0,-21,0,0,0,0,0,0,0,0,0,0,0,0],
@@ -40,22 +44,7 @@ def test_A():
 
     assert np.array_equal(a, correct_output)
 
-
 def test_B():
-    frame_pickups = np.array([[31,32,33],
-                                [34,35,36],
-                                [37,38,39],
-                                [40,41,42],
-                                [43,44,45]])
-    
-    upright_pickups = np.array([[1,2,3],
-                                [4,5,6],
-                                [7,8,9],
-                                [10,11,12],
-                                [13,14,15]])
-    
-    lengths = np.array([21,22,23,24,25])
-    
     correct_output = np.array([[31],
                                 [32],
                                 [33],
@@ -76,4 +65,21 @@ def test_B():
 
     b = fl.global_B_vector()
     assert np.array_equal(b, correct_output)
+
+def test_jacobian():
+    fl = Five_Link(frame_pickups, lengths, upright_pickups)
+
+    vars = np.random.rand(16)
+
+    my_jacobian = fl.jacobian(vars, 2)
+
+    def func(vars):
+        return fl.full_sys_of_eq(vars, 2, np.random.rand())
+    
+    correct_jacobian = jacobi(func, vars)[0]
+
+    print(my_jacobian-correct_jacobian)
+
+    
+    np.testing.assert_almost_equal(my_jacobian, correct_jacobian)
 
