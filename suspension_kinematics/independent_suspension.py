@@ -1,5 +1,5 @@
 import numpy as np
-from suspension_components import *
+from suspension_kinematics.components import *
 from scipy.linalg import block_diag
 from scipy.linalg import lu
 

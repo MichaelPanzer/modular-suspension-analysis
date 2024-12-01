@@ -1,14 +1,13 @@
 from abc import ABC, abstractmethod
 import numpy as np
 from scipy.linalg import block_diag
+import vpython
 
 sin_approx_a = 24/np.pi**4
 cos_approx_a = (60*np.pi**2 - 720) / np.pi**5
 cos_approx_b = (60 - 3*np.pi**2) / np.pi**3
-
 def a_sin(angle):
     return sin_approx_a*angle
-
 def a_cos(angle):
     return cos_approx_a*angle**2 + cos_approx_b
 
@@ -91,9 +90,8 @@ class Single_Link(Linkage):
         #returns [[dx/d_alpha],[dx/d_beta]]
         return np.array([[-np.cos(beta)*np.sin(alpha), np.cos(beta)*np.cos(alpha), 0], [-np.sin(beta)*np.cos(alpha), -np.sin(beta)*np.sin(alpha), np.cos(beta)]])   
     
-    #override TODO
-    def render(self):
-        ...
+
+
 
 class A_Arm(Linkage):
     def __init__(self, frame_pickup_0, frame_pickup_1, ball_joint_pos):
