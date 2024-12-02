@@ -5,12 +5,11 @@ import vpython
 
 sin_approx_a = 24/np.pi**4
 cos_approx_a = (60*np.pi**2 - 720) / np.pi**5
-cos_approx_b = (60 - 3*np.pi**2) / np.pi**3
+cos_approx_b = (60-3*np.pi**2) / np.pi**3
 def a_sin(angle):
     return sin_approx_a*angle
 def a_cos(angle):
     return cos_approx_a*angle**2 + cos_approx_b
-
 
 
 #TODO maybe try to find a better class structure because linakge and wheel carrier have the same methods
@@ -31,13 +30,12 @@ class Linkage(ABC):
     def approx_nonlin_x(self, vars):
         pass
 
-
     @abstractmethod
     def jacobian(self, vars):
         pass
 
     @abstractmethod
-    def render(self, vars):
+    def update_vp_position(self, vars):
         pass
 
 class Wheel_Carrier(ABC):
@@ -57,15 +55,17 @@ class Wheel_Carrier(ABC):
     def jacobian(self, vars):
         pass
     @abstractmethod
-    def render(self, vars):
+    def update_vp_position(self, vars):
         pass
 
-#wright tests for these methods
+#write tests for these methods
 class Single_Link(Linkage):
-    def __init__(self, frame_pickup, length):
+    def __init__(self, frame_pickup, length, diameter=0.75):
         self.frame_pickup = frame_pickup
         self.length = length
-    
+        self.vp_object = vpython.compound(self.create_object_list((0,0), diameter), origin=vpython.vector(0,0,0), pos=vpython.vector(*self.frame_pickup), color=vpython.color.blue )
+
+
     #override
     def local_A_matrix(self):
         return -1*self.length*np.identity(3)
@@ -90,9 +90,33 @@ class Single_Link(Linkage):
         #returns [[dx/d_alpha],[dx/d_beta]]
         return np.array([[-np.cos(beta)*np.sin(alpha), np.cos(beta)*np.cos(alpha), 0], [-np.sin(beta)*np.cos(alpha), -np.sin(beta)*np.sin(alpha), np.cos(beta)]])   
     
+    def create_object_list(self, angles, diameter):
+        axis = self.nonlin_x_expression(angles)
+        radius = diameter/2
+        
+        frame_side_cone  = vpython.cone()
+        frame_side_cone.axis = vpython.vector(*(-diameter * axis))
+        frame_side_cone.pos = -frame_side_cone.axis
+        frame_side_cone.radius = radius
 
+        cylinder = vpython.cylinder()
+        cylinder.axis = vpython.vector(*((self.length-2*diameter)*axis))
+        cylinder.pos = -frame_side_cone.axis
+        cylinder.radius = radius
 
+        wheel_side_cone = vpython.cone()
+        wheel_side_cone.axis = vpython.vector(*(diameter*axis))
+        wheel_side_cone.pos = cylinder.pos+cylinder.axis
+        wheel_side_cone.radius = radius
 
+        return [frame_side_cone, cylinder, wheel_side_cone]
+
+    #override
+    def update_vp_position(self, angles):
+        self.vp_object.axis = vpython.vector(*self.nonlin_x_expression(angles))
+        #self.vp_object.pos = vpython.vector(*self.frame_pickup)
+        return self.vp_object
+    
 class A_Arm(Linkage):
     def __init__(self, frame_pickup_0, frame_pickup_1, ball_joint_pos):
         self.frame_pickup_0 = frame_pickup_0
@@ -146,9 +170,7 @@ class A_Arm(Linkage):
         alpha = vars
         return np.array([-np.sin(alpha), np.cos(alpha)]) 
 
-    #override TODO
-    def render(self):
-        ...
+
 
 #TODO add stuff for these 
 class H_Arm:...
@@ -163,6 +185,7 @@ class Upright(Wheel_Carrier):
     def __init__(self, pickups):
         self.pickups = pickups
         self.pickup_count = pickups.shape[0]
+        self.vp_object = vpython.compound(self.create_object_list(), origin=vpython.vector(0,0,0), color=vpython.color.green )
     
     #override
     def local_A_matrix(self):
@@ -255,6 +278,45 @@ class Upright(Wheel_Carrier):
 
         return block_diag(wheel_jac, [dr_dtheta, dr_dphi, dr_dgamma])
     
+    def create_object_list(self, diameter = 0.1):
+        output = np.zeros(3+2*self.pickup_count, dtype=vpython.standardAttributes)
+        r = diameter/2
+
+        output[0] = vpython.arrow(axis=vpython.vector(1,0,0))
+        output[1] = vpython.arrow(axis=vpython.vector(0,1,0))
+        output[2] = vpython.arrow(axis=vpython.vector(0,0,1))
+
+        pickup_objects = output[3:]
+        for i, pickup in enumerate(self.pickups):
+            unit_axis = vpython.hat(vpython.vector(*pickup))
+            cylinder_axis = vpython.vector(*pickup) - diameter*unit_axis
+            pickup_objects[2*i] = vpython.cylinder(axis=cylinder_axis, radius=r)
+            pickup_objects[2*i+1] = vpython.cone(pos=cylinder_axis, axis=unit_axis*diameter, radius=r)
+        
+        return output.tolist()
+    
+        #override
+    
     #override
-    def render(self):
-        ...#TODO implement this BS
+    def update_vp_position(self, vars):
+        theta, phi, gamma = vars[3:]
+
+        c_theta = np.cos(theta)
+        s_theta = np.sin(theta)
+        c_phi = np.cos(phi)
+        s_phi = np.sin(phi)
+        c_gamma = np.cos(gamma)
+        s_gamma = np.sin(gamma)
+        
+        axis = vpython.vector(c_phi*c_gamma, c_phi*s_gamma, -s_gamma)
+        #angle = axis.dot(vpython.vector(theta, phi, gamma))
+        up = vpython.vector(c_theta*s_phi*c_gamma+s_theta*s_gamma, c_theta*s_phi*s_gamma-s_theta*c_gamma, c_theta*c_phi)
+
+        self.vp_object.axis = axis
+        self.vp_object.up = up
+        self.vp_object.pos = vpython.vector(*vars[:3])
+
+        return self.vp_object
+
+
+
