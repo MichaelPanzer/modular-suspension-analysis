@@ -60,10 +60,10 @@ class Wheel_Carrier(ABC):
 
 #write tests for these methods
 class Single_Link(Linkage):
-    def __init__(self, frame_pickup, length, diameter=0.75):
+    def __init__(self, frame_pickup, length, diameter=0.3):
         self.frame_pickup = frame_pickup
         self.length = length
-        self.vp_object = vpython.compound(self.create_object_list((0,0), diameter), origin=vpython.vector(0,0,0), pos=vpython.vector(*self.frame_pickup), color=vpython.color.blue )
+        self.vp_object = vpython.compound(self.create_object_list((0,0), diameter), origin=vpython.vector(0,0,0), pos=vpython.vector(*self.frame_pickup), color=vpython.color.purple )
 
 
     #override
@@ -185,7 +185,7 @@ class Upright(Wheel_Carrier):
     def __init__(self, pickups):
         self.pickups = pickups
         self.pickup_count = pickups.shape[0]
-        self.vp_object = vpython.compound(self.create_object_list(), origin=vpython.vector(0,0,0), color=vpython.color.green )
+        self.vp_object = vpython.compound(self.create_object_list(), origin=vpython.vector(0,0,0))
     
     #override
     def local_A_matrix(self):
@@ -282,16 +282,16 @@ class Upright(Wheel_Carrier):
         output = np.zeros(3+2*self.pickup_count, dtype=vpython.standardAttributes)
         r = diameter/2
 
-        output[0] = vpython.arrow(axis=vpython.vector(1,0,0))
-        output[1] = vpython.arrow(axis=vpython.vector(0,1,0))
-        output[2] = vpython.arrow(axis=vpython.vector(0,0,1))
+        output[0] = vpython.arrow(axis=vpython.vector(1,0,0), color=vpython.color.blue)
+        output[1] = vpython.arrow(axis=vpython.vector(0,1,0), color=vpython.color.green)
+        output[2] = vpython.arrow(axis=vpython.vector(0,0,1), color=vpython.color.red)
 
         pickup_objects = output[3:]
         for i, pickup in enumerate(self.pickups):
             unit_axis = vpython.hat(vpython.vector(*pickup))
             cylinder_axis = vpython.vector(*pickup) - diameter*unit_axis
-            pickup_objects[2*i] = vpython.cylinder(axis=cylinder_axis, radius=r)
-            pickup_objects[2*i+1] = vpython.cone(pos=cylinder_axis, axis=unit_axis*diameter, radius=r)
+            pickup_objects[2*i] = vpython.cylinder(axis=cylinder_axis, radius=r, color=vpython.color.magenta)
+            pickup_objects[2*i+1] = vpython.cone(pos=cylinder_axis, axis=unit_axis*diameter, radius=r, color=vpython.color.magenta)
         
         return output.tolist()
     

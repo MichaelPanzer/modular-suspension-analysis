@@ -104,7 +104,6 @@ class Kinematic_Model:
 
             return np.concatenate((nonlin_expressions, np.array([driving_expression])))
     
-
     #TODO write some fucking tests stoopidhead
     def jacobian(self, vars, driving_var):
         jacobians = np.zeros(self.linkages.shape[0] + 1, dtype=np.ndarray)
@@ -130,8 +129,19 @@ class Kinematic_Model:
 
 
     
-    def render(self):
-        pass
+    def render(self, vars):
+        self.wheel_carrier.update_vp_position(vars[0:6])
+
+        link_vars = vars[6:]
+        i=0
+        for link in self.linkages:
+            link_var_count = 2
+            link.update_vp_position(link_vars[i:i+link_var_count])
+            i+=link_var_count
+        
+        return
+
+        
 
 
 class Five_Link(Kinematic_Model):
@@ -139,6 +149,7 @@ class Five_Link(Kinematic_Model):
         linkages = np.zeros(5, dtype=Linkage)
 
         for i, link in enumerate(linkages):
+            print("count", i)
             linkages[i] = Single_Link(frame_pickups[i], link_lengths[i])
 
         upright = Upright(upright_pickups)
