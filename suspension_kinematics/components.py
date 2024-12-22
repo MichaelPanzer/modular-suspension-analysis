@@ -245,6 +245,7 @@ class Upright(Wheel_Carrier):
         return np.concatenate([[wheel_x, wheel_y, wheel_z], r.tolist()])
     
         #override
+    
     def jacobian(self, vars):
         wheel_x, wheel_y, wheel_z, theta, phi, gamma = vars
 
@@ -282,20 +283,22 @@ class Upright(Wheel_Carrier):
 
         return block_diag(wheel_jac, [dr_dtheta, dr_dphi, dr_dgamma])
     
-    def create_object_list(self, diameter = 0.1):
+    def create_object_list(self, diameter=0.1):
         output = np.zeros(3+2*self.pickup_count, dtype=vpython.standardAttributes)
         r = diameter/2
 
-        output[0] = vpython.arrow(axis=vpython.vector(0,0,1), color=vpython.color.blue)
-        output[1] = vpython.arrow(axis=vpython.vector(-1,0,0), color=vpython.color.green)
-        output[2] = vpython.arrow(axis=vpython.vector(0,-1,0), color=vpython.color.red)
+        #the first 3 objects are the basis vectors for the local frame of refrence
+        output[0] = vpython.arrow(axis=vpython.vector(1,0,0), color=vpython.color.blue)
+        output[1] = vpython.arrow(axis=vpython.vector(0,1,0), color=vpython.color.green)#wheel is axisymetric so these mfs prolly arent nessecary
+        output[2] = vpython.arrow(axis=vpython.vector(0,0,1), color=vpython.color.red)
 
+        #All remaining objects are for the pickup points
         pickup_objects = output[3:]
         for i, pickup in enumerate(self.pickups):
-            p = np.dot(vp_transf_mat, pickup)
+            #p = np.dot(vp_transf_mat, pickup)
 
-            unit_axis = vpython.hat(vpython.vector(*p))
-            cylinder_axis = vpython.vector(*p) - diameter*unit_axis
+            unit_axis = vpython.hat(vpython.vector(*pickup))
+            cylinder_axis = vpython.vector(*pickup) - diameter*unit_axis
 
             pickup_objects[2*i] = vpython.cylinder(axis=cylinder_axis, radius=r, color=vpython.color.magenta)
             pickup_objects[2*i+1] = vpython.cone(pos=cylinder_axis, axis=unit_axis*diameter, radius=r, color=vpython.color.magenta)
@@ -315,11 +318,11 @@ class Upright(Wheel_Carrier):
         c_gamma = np.cos(gamma)
         s_gamma = np.sin(gamma)
         
-        #axis = vpython.vector(c_phi*c_gamma, c_phi*s_gamma, -s_gamma)
-        axis = vpython.vector(-c_phi*s_gamma, s_gamma, c_phi*c_gamma)
+        axis = vpython.vector(*np.dot(vp_transf_mat, np.array([c_phi*c_gamma, c_phi*s_gamma, -s_gamma])))
+        #axis = vpython.vector(-c_phi*s_gamma, s_gamma, c_phi*c_gamma)
         #angle = axis.dot(vpython.vector(theta, phi, gamma))
-        #up = vpython.vector(c_theta*s_phi*c_gamma+s_theta*s_gamma, c_theta*s_phi*s_gamma-s_theta*c_gamma, c_theta*c_phi)
-        up = vpython.vector(-c_theta*s_phi*s_gamma-s_theta*c_gamma, -c_theta*c_phi, c_theta*s_phi*c_gamma+s_theta*s_gamma)
+        up = vpython.vector(*np.dot(vp_transf_mat, np.array([c_theta*s_phi*c_gamma+s_theta*s_gamma, c_theta*s_phi*s_gamma-s_theta*c_gamma, c_theta*c_phi])))
+        #up = vpython.vector(-c_theta*s_phi*s_gamma-s_theta*c_gamma, -c_theta*c_phi, c_theta*s_phi*c_gamma+s_theta*s_gamma)
 
 
         self.vp_object.axis = axis
