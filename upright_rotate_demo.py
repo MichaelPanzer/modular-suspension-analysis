@@ -22,7 +22,7 @@ arrow(axis=vector(-1,0,0), color=color.green)
 arrow(axis=vector(0,-1,0), color=color.red)
 
 for i in range(500):
-    rate(60)
-    upright.update_vp_position((1,0,0, angle, .5, .5))
+    rate(6)
+    upright.update_vp_position((1,0,0, 0, 0, 0))
     angle+= increment
 

@@ -186,7 +186,7 @@ class Upright(Wheel_Carrier):
     def __init__(self, pickups):
         self.pickups = pickups
         self.pickup_count = pickups.shape[0]
-        self.vp_object = vpython.compound(self.create_object_list(), origin=vpython.vector(0,0,0))
+        self.vp_object = vpython.compound(self.create_object_list(), origin=vpython.vector(0,0,0), axis=vpython.vector(1,0,0), up=vpython.vector(0,1,0))
     
     #override
     def local_A_matrix(self):
@@ -295,10 +295,12 @@ class Upright(Wheel_Carrier):
     def update_vp_position(self, vars):
         theta, phi, gamma = vars[3:]
 
-        r = np.dot(vp_transf_mat, R.from_euler('XYZ', [theta, phi, gamma]).as_matrix())
+        #r = np.dot(vp_transf_mat, R.from_euler('XYZ', [theta, phi, gamma]).as_matrix())
+        r = vp_transf_mat.dot(R.from_euler('XYZ', [theta, phi, gamma]).as_matrix())
 
-        axis = vpython.vector(*np.dot(r, np.array([1,0,0])))
-        up = vpython.vector(*np.dot(r, np.array([0,1,0])))
+
+        axis = vpython.vector(*r.dot(np.array([0,-1,0])))
+        up = vpython.vector(*r.dot(np.array([0,0,-1])))
 
 
         #axis = vpython.vector(*np.dot(vp_transf_mat, np.array([c_phi*c_gamma, c_phi*s_gamma, -s_gamma])))
