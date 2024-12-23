@@ -60,10 +60,10 @@ class Wheel_Carrier(ABC):
         pass
 #write tests for these methods
 class Single_Link(Linkage):
-    def __init__(self, frame_pickup, length, diameter=0.3):
+    def __init__(self, frame_pickup, length, diameter=25):
         self.frame_pickup = frame_pickup
         self.length = length
-        self.vp_object = vpython.compound(self.create_object_list(), origin=vpython.vector(0,0,0), pos=vpython.vector(*np.dot(vp_transf_mat, self.frame_pickup)), color=vpython.color.purple )
+        self.vp_object = vpython.compound(self.create_object_list(diameter), origin=vpython.vector(0,0,0), pos=vpython.vector(*np.dot(vp_transf_mat, self.frame_pickup)), color=vpython.color.purple )
 
 
     #override
@@ -90,7 +90,7 @@ class Single_Link(Linkage):
         #returns [[dx/d_alpha],[dx/d_beta]]
         return np.array([[-np.cos(beta)*np.sin(alpha), np.cos(beta)*np.cos(alpha), 0], [-np.sin(beta)*np.cos(alpha), -np.sin(beta)*np.sin(alpha), np.cos(beta)]])   
     
-    def create_object_list(self, diameter=0.25):
+    def create_object_list(self, diameter):
         #axis = np.dot(vp_transf_mat, self.nonlin_x_expression(angles))
         x_axis = np.array([1,0,0])#All objects are generated along the +x axis in the vpython F.O.R.
 
@@ -183,10 +183,10 @@ class Strut:...
 class Trailing_Arm:...
 
 class Upright(Wheel_Carrier):
-    def __init__(self, pickups):
+    def __init__(self, pickups, diameter=15, axis_len=40):
         self.pickups = pickups
         self.pickup_count = pickups.shape[0]
-        self.vp_object = vpython.compound(self.create_object_list(), origin=vpython.vector(0,0,0), axis=vpython.vector(1,0,0), up=vpython.vector(0,1,0))
+        self.vp_object = vpython.compound(self.create_object_list(diameter, axis_len), origin=vpython.vector(0,0,0), axis=vpython.vector(1,0,0), up=vpython.vector(0,1,0))
     
     #override
     def local_A_matrix(self):
@@ -267,14 +267,14 @@ class Upright(Wheel_Carrier):
 
         return block_diag(wheel_jac, [dr_dtheta, dr_dphi, dr_dgamma])
     
-    def create_object_list(self, diameter=0.1):
+    def create_object_list(self, diameter, axis_len):
         output = np.zeros(3+2*self.pickup_count, dtype=vpython.standardAttributes)
         r = diameter/2
 
         #the first 3 objects are the basis vectors for the local frame of refrence
-        output[0] = vpython.arrow(axis=vpython.vector(0,0,1), color=vpython.color.blue)
-        output[1] = vpython.arrow(axis=vpython.vector(-1,0,0), color=vpython.color.green)#wheel is axisymetric so these mfs prolly arent nessecary
-        output[2] = vpython.arrow(axis=vpython.vector(0,-1,0), color=vpython.color.red)
+        output[0] = vpython.arrow(axis=vpython.vector(0,0,axis_len), color=vpython.color.blue)
+        output[1] = vpython.arrow(axis=vpython.vector(-axis_len,0,0), color=vpython.color.green)#wheel is axisymetric so these mfs prolly arent nessecary
+        output[2] = vpython.arrow(axis=vpython.vector(0,-axis_len,0), color=vpython.color.red)
 
         #All remaining objects are for the pickup points
         pickup_objects = output[3:]
