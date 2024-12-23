@@ -12,12 +12,12 @@ A basic 5 link suspension solver has been written.
 
 <ins>Todo List</ins>
 - [x] Rewrite current demo program as a jupyter notebook
-- [ ] Add 3d animations with vpython
+- [x] Add 3d animations with vpython
 - [ ] Fix indexing in kinematic_model class so that it can work with various types of links
-- [ ] Refactor matrix generation to reduce copying of arrays\
+- [ ] Refactor matrix generation to reduce copying of arrays
 - [ ] Create auxiliary pickups for push rods, sway bars, and coilovers
 - [ ] Figure out why the jacobian test is failing
 - [ ] Add ability to import and save as csv file
 - [ ] Write methods for different suspension componenets
-- [ ] Create geometry optimization algoritms 
+- [ ] Create suspension geometry optimization algoritms 
 
