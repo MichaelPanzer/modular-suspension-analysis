@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 import numpy as np
 from scipy.linalg import block_diag
+from scipy.spatial.transform import Rotation as R
 import vpython
 
 sin_approx_a = 24/np.pi**4
@@ -174,16 +175,12 @@ class A_Arm(Linkage):
         alpha = vars
         return np.array([-np.sin(alpha), np.cos(alpha)]) 
 
-
-
 #TODO add stuff for these 
 class H_Arm:...
 
 class Strut:...
 
 class Trailing_Arm:...
-
-
 
 class Upright(Wheel_Carrier):
     def __init__(self, pickups):
@@ -209,21 +206,8 @@ class Upright(Wheel_Carrier):
     #override
     def nonlin_x_expression(self, vars):
         wheel_x, wheel_y, wheel_z, theta, phi, gamma = vars
-
-        #TODO this whole thing can be made so much more efficent
-        r_x = np.array([[1, 0, 0],
-                        [0, np.cos(theta), -1*np.sin(theta)],
-                        [0, np.sin(theta), np.cos(theta)]])
-        r_y = np.array([[np.cos(phi), 0, np.sin(phi)],
-                        [0, 1, 0],
-                        [-1*np.sin(phi), 0, np.cos(phi)]])
-        r_z = np.array([[np.cos(gamma), -1*np.sin(gamma), 0],
-                        [np.sin(gamma), np.cos(gamma), 0],
-                        [0, 0, 1]])
-
-        r = (r_x.dot(r_y).dot(r_z)).T.flatten()
          
-        return np.concatenate([[wheel_x, wheel_y, wheel_z], r.tolist()])
+        return np.concatenate([[wheel_x, wheel_y, wheel_z], R.from_euler('XYZ', [theta, phi, gamma]).as_matrix().T.flatten()])
     
     #override
     def approx_nonlin_x(self, vars):
@@ -288,14 +272,14 @@ class Upright(Wheel_Carrier):
         r = diameter/2
 
         #the first 3 objects are the basis vectors for the local frame of refrence
-        output[0] = vpython.arrow(axis=vpython.vector(1,0,0), color=vpython.color.blue)
-        output[1] = vpython.arrow(axis=vpython.vector(0,1,0), color=vpython.color.green)#wheel is axisymetric so these mfs prolly arent nessecary
-        output[2] = vpython.arrow(axis=vpython.vector(0,0,1), color=vpython.color.red)
+        output[0] = vpython.arrow(axis=vpython.vector(0,0,1), color=vpython.color.blue)
+        output[1] = vpython.arrow(axis=vpython.vector(-1,0,0), color=vpython.color.green)#wheel is axisymetric so these mfs prolly arent nessecary
+        output[2] = vpython.arrow(axis=vpython.vector(0,-1,0), color=vpython.color.red)
 
         #All remaining objects are for the pickup points
         pickup_objects = output[3:]
         for i, pickup in enumerate(self.pickups):
-            #p = np.dot(vp_transf_mat, pickup)
+            pickup = np.dot(vp_transf_mat, pickup)
 
             unit_axis = vpython.hat(vpython.vector(*pickup))
             cylinder_axis = vpython.vector(*pickup) - diameter*unit_axis
@@ -311,17 +295,16 @@ class Upright(Wheel_Carrier):
     def update_vp_position(self, vars):
         theta, phi, gamma = vars[3:]
 
-        c_theta = np.cos(theta)
-        s_theta = np.sin(theta)
-        c_phi = np.cos(phi)
-        s_phi = np.sin(phi)
-        c_gamma = np.cos(gamma)
-        s_gamma = np.sin(gamma)
-        
-        axis = vpython.vector(*np.dot(vp_transf_mat, np.array([c_phi*c_gamma, c_phi*s_gamma, -s_gamma])))
+        r = np.dot(vp_transf_mat, R.from_euler('XYZ', [theta, phi, gamma]).as_matrix())
+
+        axis = vpython.vector(*np.dot(r, np.array([1,0,0])))
+        up = vpython.vector(*np.dot(r, np.array([0,1,0])))
+
+
+        #axis = vpython.vector(*np.dot(vp_transf_mat, np.array([c_phi*c_gamma, c_phi*s_gamma, -s_gamma])))
         #axis = vpython.vector(-c_phi*s_gamma, s_gamma, c_phi*c_gamma)
         #angle = axis.dot(vpython.vector(theta, phi, gamma))
-        up = vpython.vector(*np.dot(vp_transf_mat, np.array([c_theta*s_phi*c_gamma+s_theta*s_gamma, c_theta*s_phi*s_gamma-s_theta*c_gamma, c_theta*c_phi])))
+        #up = vpython.vector(*np.dot(vp_transf_mat, np.array([c_theta*s_phi*c_gamma+s_theta*s_gamma, c_theta*s_phi*s_gamma-s_theta*c_gamma, c_theta*c_phi])))
         #up = vpython.vector(-c_theta*s_phi*s_gamma-s_theta*c_gamma, -c_theta*c_phi, c_theta*s_phi*c_gamma+s_theta*s_gamma)
 
 

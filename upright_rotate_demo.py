@@ -6,11 +6,11 @@ from vpython import vector
 from vpython import arrow
 import numpy as np
 
-upright_pickups = np.array([[0,0.9,0.9],
-                          [0,-0.9,0.9],
-                          [0,-0.9,-0.9],
-                          [0,0.9,-0.9],
-                          [0,1.5,0]])
+upright_pickups = np.array([[0.9,0,0.9],
+                          [-0.9,0,0.9],
+                          [-0.9,0,-0.9],
+                          [0.9,0,-0.9],
+                          [1.5,0,0]])
 
 upright = Upright(upright_pickups)
 
