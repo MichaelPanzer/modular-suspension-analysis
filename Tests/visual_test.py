@@ -9,7 +9,7 @@
 
 from vpython import *
 
-ball1 = sphere(pos=vector(1, 0, 0), radius=0.1, color=color.red)
+ball1 = sphere(pos=vector(1, 0, 0), radius=0.1, color=color.red, visible = False)
 
 print(ball1.pos)
 

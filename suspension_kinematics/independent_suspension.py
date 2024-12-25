@@ -2,9 +2,10 @@ import numpy as np
 from suspension_kinematics.components import *
 from scipy.linalg import block_diag
 from scipy.linalg import lu
+import sympy
 
 class Kinematic_Model:
-
+ 
     def __init__(self, linkages, wheel_carrier):
         self.linkages = linkages
         self.wheel_carrier = wheel_carrier
@@ -149,7 +150,6 @@ class Five_Link(Kinematic_Model):
         linkages = np.zeros(5, dtype=Linkage)
 
         for i, link in enumerate(linkages):
-            print("count", i)
             linkages[i] = Single_Link(frame_pickups[i], link_lengths[i])
 
         upright = Upright(upright_pickups)

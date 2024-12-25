@@ -3,6 +3,7 @@ import numpy as np
 from scipy.linalg import block_diag
 from scipy.spatial.transform import Rotation as R
 import vpython
+import sympy
 
 sin_approx_a = 24/np.pi**4
 cos_approx_a = (60*np.pi**2 - 720) / np.pi**5
@@ -12,7 +13,7 @@ def approx_sin(angle):
 def approx_cos(angle):
     return cos_approx_a*angle**2 + cos_approx_b
 
-vp_transf_mat = np.array([[0,-1,0], [0,0,-1], [1,0,0]]) #this matrix transforms between the SAE coordinate system and vpython coordinate system
+vp_transf_mat = np.array([[0,-1,0], [0,0,-1], [1,0,0]]) #this matrix transforms from the SAE coordinate system to the vpython coordinate system
 #TODO maybe try to find a better class structure because linakge and wheel carrier have the same methods
 class Linkage(ABC):
     @abstractmethod
@@ -58,13 +59,13 @@ class Wheel_Carrier(ABC):
     @abstractmethod
     def update_vp_position(self, vars):
         pass
-#write tests for these methods
+
 class Single_Link(Linkage):
-    def __init__(self, frame_pickup, length, diameter=25):
+    def __init__(self, frame_pickup, length, datum_vars=(np.pi/2,0),diameter=25):
         self.frame_pickup = frame_pickup
         self.length = length
-        self.vp_object = vpython.compound(self.create_object_list(diameter), origin=vpython.vector(0,0,0), pos=vpython.vector(*np.dot(vp_transf_mat, self.frame_pickup)), color=vpython.color.purple )
-
+        self.vp_object = vpython.compound(self.create_object_list(diameter), origin=vpython.vector(0,0,0), pos=vpython.vector(*np.dot(vp_transf_mat, self.frame_pickup)), color=vpython.color.purple, visible=False )
+        self.datum_vars=datum_vars
 
     #override
     def local_A_matrix(self):
@@ -82,7 +83,20 @@ class Single_Link(Linkage):
     #override
     def approx_nonlin_x(self, vars):
         alpha, beta = vars
-        return np.array([approx_cos(beta)*approx_cos(alpha), approx_cos(beta)*approx_sin(alpha), approx_sin(beta)])
+        datum_alpha, datum_beta = self.datum_vars
+        delta_alpha, delta_beta = vars[0]-datum_alpha, vars[1]-datum_beta
+
+
+        c_dat_a = np.cos(datum_alpha)
+        s_dat_a = np.sin(datum_alpha)
+        c_dat_b = np.cos(datum_beta)
+        s_dat_b = np.sin(datum_beta)
+
+        #datum is used as an offset to keep approximation domain +-90 deg
+        cos_beta = approx_cos(delta_beta)*c_dat_b - approx_sin(delta_beta)*s_dat_b
+        return np.array([ cos_beta*(approx_cos(delta_alpha)*c_dat_b - approx_sin(delta_alpha)*s_dat_a), 
+                         cos_beta*(approx_cos(delta_alpha)*s_dat_a + approx_sin(delta_alpha)*c_dat_a), 
+                         approx_cos(delta_beta)*s_dat_b + approx_sin(delta_beta)*c_dat_b])
     
     #override
     def jacobian(self, vars):
@@ -115,6 +129,7 @@ class Single_Link(Linkage):
 
     #override
     def update_vp_position(self, angles):
+        self.vp_object.visible = True
         #print(np.dot(vp_transf_mat, self.nonlin_x_expression(angles)))
         self.vp_object.axis = vpython.vector(*np.dot(vp_transf_mat, self.nonlin_x_expression(angles)))
         #self.vp_object.axis = vpython.vector(1,0,np.cos(angles[0]))
@@ -301,14 +316,6 @@ class Upright(Wheel_Carrier):
 
         axis = vpython.vector(*r.dot(np.array([0,-1,0])))
         up = vpython.vector(*r.dot(np.array([0,0,-1])))
-
-
-        #axis = vpython.vector(*np.dot(vp_transf_mat, np.array([c_phi*c_gamma, c_phi*s_gamma, -s_gamma])))
-        #axis = vpython.vector(-c_phi*s_gamma, s_gamma, c_phi*c_gamma)
-        #angle = axis.dot(vpython.vector(theta, phi, gamma))
-        #up = vpython.vector(*np.dot(vp_transf_mat, np.array([c_theta*s_phi*c_gamma+s_theta*s_gamma, c_theta*s_phi*s_gamma-s_theta*c_gamma, c_theta*c_phi])))
-        #up = vpython.vector(-c_theta*s_phi*s_gamma-s_theta*c_gamma, -c_theta*c_phi, c_theta*s_phi*c_gamma+s_theta*s_gamma)
-
 
         self.vp_object.axis = axis
         self.vp_object.up = up
