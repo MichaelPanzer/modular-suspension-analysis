@@ -2,7 +2,7 @@ import numpy as np
 from suspension_kinematics.components import *
 from scipy.linalg import block_diag
 from scipy.linalg import lu
-import sympy
+from collections.abc import Iterable
 
 class Kinematic_Model:
  
@@ -85,28 +85,37 @@ class Kinematic_Model:
 
         return x
     
-    def full_sys_of_eq(self, vars, driving_var, value):
+    def full_sys_of_eq(self, vars, driving_vals):#driving vals is tuple of lists ([indexes], [values])
         x = self.generate_x_nonlinear(vars)
 
         nonlin_expressions = (np.dot(self.a_mat, x).T - self.b_vec.T)[0]
+        
+        #if not isinstance(driving_vals, Iterable):
+            #driving_vals = [driving_vals, ]
 
-        driving_expression = x[driving_var] - value
+        driving_exprs = np.zeros(len(driving_vals[0]))
+        for i, (var_index, value)  in enumerate(zip(driving_vals[0], driving_vals[1])):
+            driving_exprs[i] = x[var_index] - value
 
-        return np.concatenate((nonlin_expressions, np.array([driving_expression])))
 
-    def approx_sys_of_eq(self, vars, driving_var, value):
+        return np.concatenate((nonlin_expressions, driving_exprs))
+    
+
+    def approx_sys_of_eq(self, vars, driving_vals):
             x = self.approx_x_nonlinear(vars)
 
             nonlin_expressions = (np.dot(self.a_mat, x).T - self.b_vec.T)[0]
 
             #print(nonlin_expressions)
 
-            driving_expression = x[driving_var] - value
+            driving_exprs = np.zeros(len(driving_vals[0]))
+            for i, (var_index, value)  in enumerate(zip(driving_vals[0], driving_vals[1])):
+                driving_exprs[i] = x[var_index] - value
 
-            return np.concatenate((nonlin_expressions, np.array([driving_expression])))
+            return np.concatenate((nonlin_expressions, np.array([driving_exprs])))
     
     #TODO write some fucking tests stoopidhead
-    def jacobian(self, vars, driving_var):
+    def jacobian(self, vars, driving_var_indices):
         jacobians = np.zeros(self.linkages.shape[0] + 1, dtype=np.ndarray)
         link_angles = vars[6:]
         jacobians[0] = self.wheel_carrier.jacobian(vars[0:6])
@@ -121,12 +130,13 @@ class Kinematic_Model:
 
 
         #creates a jacobian matrix with the derivative of the driving term =0
-        jacobian_matrix = block_diag(*jacobians)
+        jacobian_matrix = block_diag(*jacobians)    
 
-        driving_var_vector = np.zeros(self.a_mat[0].shape)
-        driving_var_vector[driving_var] = 1
+        driving_var_matrix = np.zeros((len(driving_var_indices),) + self.a_mat[0].shape)
+        for i, var_index in enumerate(driving_var_indices):
+            driving_var_matrix[i,var_index] = 1
 
-        return np.dot(np.vstack([self.a_mat, driving_var_vector]), jacobian_matrix.T)
+        return np.dot(np.vstack([self.a_mat, driving_var_matrix]), jacobian_matrix.T)
 
 
     
