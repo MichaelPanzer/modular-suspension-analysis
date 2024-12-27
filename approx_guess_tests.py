@@ -1,4 +1,4 @@
-from suspension_kinematics.independent_suspension import Five_Link
+from suspension_kinematics.independent_suspension import Kinematic_Model
 import scipy as sp
 
 import numpy as np
@@ -15,7 +15,7 @@ upright_pickups = np.array([[-61.9, -105.5, -82.1],
                           [-124.4, -86.8, -68.9],
                           [-79.6, -85.7, 141.9]])
 
-fl = Five_Link(frame_pickups, link_lengths, upright_pickups)
+fl = Kinematic_Model.five_link(frame_pickups, link_lengths, upright_pickups)
 
 #solves suspension kinematics system of equations in terms of z
 def solve_system(driving_args, guess, kinematic_model, method='hybr'): #driving args is tuple of lists

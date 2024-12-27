@@ -6,17 +6,30 @@ from collections.abc import Iterable
 
 class Kinematic_Model:
  
-    def __init__(self, linkages, wheel_carrier):
+    def __init__(self, linkages: Iterable, wheel_carrier):
         self.linkages = linkages
         self.wheel_carrier = wheel_carrier
+
+        self.components = np.concatenate(([self.wheel_carrier], self.linkages))
 
         self.a_mat = self.global_A_matrix()
         self.b_vec = self.global_B_vector()
         #self.linear_system, self.frame_pickups = self.__generate_linear_system__()
 
+    @classmethod
     def from_file(self, file_name):
         pass
 
+    @classmethod
+    def five_link(self, frame_pickups, link_lengths, upright_pickups):
+        linkages = np.zeros(5, dtype=Linkage)
+
+        for i, (pickup, length) in enumerate(zip(frame_pickups, link_lengths)):
+            linkages[i] = Single_Link(pickup, length)
+
+        upright = Upright(upright_pickups)
+
+        return Kinematic_Model(linkages, upright)
     def global_A_matrix(self):
         wheelcarrier_local_A = self.wheel_carrier.local_A_matrix()
         link_local_A = np.zeros(self.linkages.size, dtype=np.ndarray)
@@ -114,19 +127,18 @@ class Kinematic_Model:
     #TODO write some fucking tests stoopidhead
     def jacobian(self, vars, driving_var_indices):
         jacobians = np.zeros(self.linkages.shape[0] + 1, dtype=np.ndarray)
-        link_angles = vars[6:]
-        jacobians[0] = self.wheel_carrier.jacobian(vars[0:6])
+        link_angles = vars[self.wheel_carrier.input_count:]
+        jacobians[0] = self.wheel_carrier.jacobian(vars[0:self.wheel_carrier.input_count])
 
         #the first index is deticated to the wheel jacobian
         link_jacobians = jacobians[1:]
-        j = 0 #link angle index
+        j = 0 #link input index
         for i, link in enumerate(self.linkages):
-            num_link_dof = 2 #TODO make this dependent on the type of link involved
-            link_jacobians[i] = link.jacobian(link_angles[j:j+num_link_dof])
-            j+=num_link_dof
+            link_jacobians[i] = link.jacobian(link_angles[j:j+link.input_count])
+            j+=link.input_count
 
 
-        #creates a jacobian matrix with the derivative of the driving term =0
+        #creates a jacobian matrix with the derivative of the driving terms =0
         jacobian_matrix = block_diag(*jacobians)    
 
         driving_var_matrix = np.zeros((len(driving_var_indices),) + self.a_mat[0].shape)
