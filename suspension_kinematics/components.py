@@ -15,56 +15,51 @@ def approx_cos(angle):
 
 vp_transf_mat = np.array([[0,-1,0], [0,0,-1], [1,0,0]]) #this matrix transforms from the SAE coordinate system to the vpython coordinate system
 #TODO maybe try to find a better class structure because linakge and wheel carrier have the same methods
-class Linkage(ABC):
+
+class Component(ABC):
+    def __init__(self, input_count, linear_input_count, output_count):
+        self.input_count = input_count
+        self.linear_input_count = linear_input_count
+        self.output_count = output_count
+        self.dof_restricted = output_count-input_count
+
     @abstractmethod
     def local_A_matrix(self):
         pass
 
+    @abstractmethod
+    def nonlin_x_expression(self, vars):
+        pass
+
+    @abstractmethod
+    def jacobian(self, vars):
+        pass
+
+    @abstractmethod
+    def create_vp_object():
+        pass
+
+    @abstractmethod
+    def update_vp_position():
+        pass
+
+#These classes exist as a holdover from a previous structure and probably shoud be deleted
+class Linkage(Component):    
     @abstractmethod
     def local_B_vector(self):
         pass
 
-    @abstractmethod
-    def nonlin_x_expression(self, vars):
-        pass
 
-    @abstractmethod
-    def approx_nonlin_x(self, vars):
-        pass
+class Wheel_Carrier(Component): 
+    pass
 
-    @abstractmethod
-    def jacobian(self, vars):
-        pass
-
-    @abstractmethod
-    def update_vp_position(self, vars):
-        pass
-
-class Wheel_Carrier(ABC):
-    @abstractmethod
-    def local_A_matrix(self):
-        pass
-
-    @abstractmethod
-    def nonlin_x_expression(self, vars):
-        pass
-
-    @abstractmethod
-    def nonlin_x_expression(self, vars):
-        pass
-
-    @abstractmethod
-    def jacobian(self, vars):
-        pass
-    @abstractmethod
-    def update_vp_position(self, vars):
-        pass
 
 class Single_Link(Linkage):
-    def __init__(self, frame_pickup, length, datum_vars=(np.pi/2,0),diameter=25):
+    def __init__(self, frame_pickup, length, datum_vars=(np.pi/2,0)):
+        super().__init__(2, 3, 3)
         self.frame_pickup = frame_pickup
         self.length = length
-        self.vp_object = vpython.compound(self.create_object_list(diameter), origin=vpython.vector(0,0,0), pos=vpython.vector(*np.dot(vp_transf_mat, self.frame_pickup)), color=vpython.color.purple, visible=False )
+        #self.vp_object = 
         self.datum_vars=datum_vars
 
     #override
@@ -104,9 +99,9 @@ class Single_Link(Linkage):
         #returns [[dx/d_alpha],[dx/d_beta]]
         return np.array([[-np.cos(beta)*np.sin(alpha), np.cos(beta)*np.cos(alpha), 0], [-np.sin(beta)*np.cos(alpha), -np.sin(beta)*np.sin(alpha), np.cos(beta)]])   
     
-    def create_object_list(self, diameter):
-        #axis = np.dot(vp_transf_mat, self.nonlin_x_expression(angles))
-        x_axis = np.array([1,0,0])#All objects are generated along the +x axis in the vpython F.O.R.
+    #override
+    def create_vp_object(self, diameter=25, color = vpython.color.purple):
+        x_axis = np.array([1,0,0])#All objects are generated along the +x axis in the vpython frame of reference
 
         radius = diameter/2
         
@@ -125,16 +120,11 @@ class Single_Link(Linkage):
         wheel_side_cone.pos = cylinder.pos+cylinder.axis
         wheel_side_cone.radius = radius
 
-        return [frame_side_cone, cylinder, wheel_side_cone]
+        return vpython.compound([frame_side_cone, cylinder, wheel_side_cone], origin=vpython.vector(0,0,0), pos=vpython.vector(*np.dot(vp_transf_mat, self.frame_pickup)), color=color)
 
     #override
-    def update_vp_position(self, angles):
-        self.vp_object.visible = True
-        #print(np.dot(vp_transf_mat, self.nonlin_x_expression(angles)))
-        self.vp_object.axis = vpython.vector(*np.dot(vp_transf_mat, self.nonlin_x_expression(angles)))
-        #self.vp_object.axis = vpython.vector(1,0,np.cos(angles[0]))
-
-        #self.vp_object.pos = vpython.vector(*self.frame_pickup)
+    def update_vp_position(self, vp_object, angles):
+        vp_object.axis = vpython.vector(*np.dot(vp_transf_mat, self.nonlin_x_expression(angles)))
         return self.vp_object
     
 class A_Arm(Linkage):
@@ -198,10 +188,10 @@ class Strut:...
 class Trailing_Arm:...
 
 class Upright(Wheel_Carrier):
-    def __init__(self, pickups, diameter=15, axis_len=40):
-        self.pickups = pickups
+    def __init__(self, pickups):
         self.pickup_count = pickups.shape[0]
-        self.vp_object = vpython.compound(self.create_object_list(diameter, axis_len), origin=vpython.vector(0,0,0), axis=vpython.vector(1,0,0), up=vpython.vector(0,1,0))
+        self.pickups = pickups
+        super().__init__(6, 12, self.pickup_count*3)
     
     #override
     def local_A_matrix(self):
@@ -244,7 +234,7 @@ class Upright(Wheel_Carrier):
         return np.concatenate([[wheel_x, wheel_y, wheel_z], r.tolist()])
     
         #override
-    
+    #override
     def jacobian(self, vars):
         wheel_x, wheel_y, wheel_z, theta, phi, gamma = vars
 
@@ -281,8 +271,9 @@ class Upright(Wheel_Carrier):
         
 
         return block_diag(wheel_jac, [dr_dtheta, dr_dphi, dr_dgamma])
-    
-    def create_object_list(self, diameter, axis_len):
+
+    #override
+    def create_vp_object(self, diameter=15, axis_len=40, color=vpython.color.cyan):
         output = np.zeros(3+2*self.pickup_count, dtype=vpython.standardAttributes)
         r = diameter/2
 
@@ -302,7 +293,7 @@ class Upright(Wheel_Carrier):
             pickup_objects[2*i] = vpython.cylinder(axis=cylinder_axis, radius=r, color=vpython.color.magenta)
             pickup_objects[2*i+1] = vpython.cone(pos=cylinder_axis, axis=unit_axis*diameter, radius=r, color=vpython.color.magenta)
         
-        return output.tolist()
+        return vpython.compound(output.tolist(), origin=vpython.vector(0,0,0), axis=vpython.vector(1,0,0), up=vpython.vector(0,1,0), color=color)
     
         #override
     

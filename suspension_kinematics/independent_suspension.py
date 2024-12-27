@@ -41,28 +41,25 @@ class Kinematic_Model:
         return np.atleast_2d(np.block(B_vector.tolist())).T
 
     def generate_x_nonlinear(self, vars):
-        x = np.zeros(27) # fix this so it isnt stupid
+        x = np.zeros(27) # fix this so inital length is the sum of all the linear input counts
 
 
-        x[0:12] = self.wheel_carrier.nonlin_x_expression(vars[0:6]) #wheel carrier position and rotation
+        x[0:self.wheel_carrier.linear_input_count] = self.wheel_carrier.nonlin_x_expression(vars[0:self.wheel_carrier.input_count]) #wheel carrier position and rotation
 
-        link_vecs = x[12:]
-        link_angles = vars[6:]
+        link_vecs = x[self.wheel_carrier.linear_input_count:]
+        link_angles = vars[self.wheel_carrier.input_count:]
 
-        #This is really bad
         i = 0 #link vec index
         j = 0 #link angle index
-        for linkage in self.linkages:
-            num_nonlin_outputs = 3
-            num_nonlin_inputs = 2 #TODO make this dependent on the link
-                              
-            link_vecs[i:i+num_nonlin_outputs] = linkage.nonlin_x_expression(link_angles[j:j+num_nonlin_inputs])
+        for linkage in self.linkages:                 
+            link_vecs[i:i+linkage.output_count] = linkage.nonlin_x_expression(link_angles[j:j+linkage.input_count])
 
-            i += num_nonlin_outputs
-            j += num_nonlin_inputs
+            i += linkage.output_count
+            j += linkage.input_count
 
         return x
     
+    #TODO delete this
     def approx_x_nonlinear(self, vars):
         x = np.zeros(27, dtype=type(vars[0])) # fix this so length is dynamic
 
@@ -85,7 +82,7 @@ class Kinematic_Model:
 
         return x
     
-    def full_sys_of_eq(self, vars, driving_vals):#driving vals is tuple of lists ([indexes], [values])
+    def full_sys_of_eq(self, vars, driving_vals):#driving vals is a tuple of lists ([indexes], [values])
         x = self.generate_x_nonlinear(vars)
 
         nonlin_expressions = (np.dot(self.a_mat, x).T - self.b_vec.T)[0]
@@ -100,7 +97,7 @@ class Kinematic_Model:
 
         return np.concatenate((nonlin_expressions, driving_exprs))
     
-
+    #this probably isnt nessecary
     def approx_sys_of_eq(self, vars, driving_vals):
             x = self.approx_x_nonlinear(vars)
 
@@ -120,7 +117,7 @@ class Kinematic_Model:
         link_angles = vars[6:]
         jacobians[0] = self.wheel_carrier.jacobian(vars[0:6])
 
-        #the first index is deticated to the wheel jacobian and the last is for the driving var
+        #the first index is deticated to the wheel jacobian
         link_jacobians = jacobians[1:]
         j = 0 #link angle index
         for i, link in enumerate(self.linkages):
@@ -138,8 +135,6 @@ class Kinematic_Model:
 
         return np.dot(np.vstack([self.a_mat, driving_var_matrix]), jacobian_matrix.T)
 
-
-    
     def render(self, vars):
         self.wheel_carrier.update_vp_position(vars[0:6])
 
@@ -151,8 +146,6 @@ class Kinematic_Model:
             i+=link_var_count
         
         return
-
-        
 
 
 class Five_Link(Kinematic_Model):
