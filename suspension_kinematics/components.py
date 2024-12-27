@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import override
 import numpy as np
 from scipy.linalg import block_diag
 from scipy.spatial.transform import Rotation as R
@@ -14,14 +15,26 @@ def approx_cos(angle):
     return cos_approx_a*angle**2 + cos_approx_b
 
 vp_transf_mat = np.array([[0,-1,0], [0,0,-1], [1,0,0]]) #this matrix transforms from the SAE coordinate system to the vpython coordinate system
-#TODO maybe try to find a better class structure because linakge and wheel carrier have the same methods
-
 class Component(ABC):
-    def __init__(self, input_count, linear_input_count, output_count):
-        self.input_count = input_count
-        self.linear_input_count = linear_input_count
-        self.output_count = output_count
-        self.dof_restricted = output_count-input_count
+    @property
+    @abstractmethod
+    def input_count(self):
+        pass
+
+    @property
+    @abstractmethod
+    def linear_input_count(self):
+        pass
+
+    @property
+    @abstractmethod
+    def output_count(self):
+        pass
+
+    @property
+    @abstractmethod
+    def input_names(self):
+        pass
 
     @abstractmethod
     def local_A_matrix(self):
@@ -43,39 +56,41 @@ class Component(ABC):
     def update_vp_position():
         pass
 
-#These classes exist as a holdover from a previous structure and probably shoud be deleted
 class Linkage(Component):    
     @abstractmethod
     def local_B_vector(self):
         pass
-
 
 class Wheel_Carrier(Component): 
     pass
 
 
 class Single_Link(Linkage):
+    input_count = 2
+    linear_input_count = 3
+    output_count = 3
+    input_names = ["alpha", "beta"]
+
     def __init__(self, frame_pickup, length, datum_vars=(np.pi/2,0)):
-        super().__init__(2, 3, 3)
         self.frame_pickup = frame_pickup
         self.length = length
         #self.vp_object = 
         self.datum_vars=datum_vars
 
-    #override
+    @override
     def local_A_matrix(self):
         return -1*self.length*np.identity(3)
     
-    #override
+    @override
     def local_B_vector(self):
         return self.frame_pickup
     
-    #override
+    @override
     def nonlin_x_expression(self, vars):
         alpha, beta = vars
         return np.array([np.cos(beta)*np.cos(alpha), np.cos(beta)*np.sin(alpha), np.sin(beta)])   
     
-    #override
+    @override
     def approx_nonlin_x(self, vars):
         alpha, beta = vars
         datum_alpha, datum_beta = self.datum_vars
@@ -93,13 +108,13 @@ class Single_Link(Linkage):
                          cos_beta*(approx_cos(delta_alpha)*s_dat_a + approx_sin(delta_alpha)*c_dat_a), 
                          approx_cos(delta_beta)*s_dat_b + approx_sin(delta_beta)*c_dat_b])
     
-    #override
+    @override
     def jacobian(self, vars):
         alpha, beta = vars
         #returns [[dx/d_alpha],[dx/d_beta]]
         return np.array([[-np.cos(beta)*np.sin(alpha), np.cos(beta)*np.cos(alpha), 0], [-np.sin(beta)*np.cos(alpha), -np.sin(beta)*np.sin(alpha), np.cos(beta)]])   
     
-    #override
+    @override
     def create_vp_object(self, diameter=25, color = vpython.color.purple):
         x_axis = np.array([1,0,0])#All objects are generated along the +x axis in the vpython frame of reference
 
@@ -122,7 +137,7 @@ class Single_Link(Linkage):
 
         return vpython.compound([frame_side_cone, cylinder, wheel_side_cone], origin=vpython.vector(0,0,0), pos=vpython.vector(*np.dot(vp_transf_mat, self.frame_pickup)), color=color)
 
-    #override
+    @override
     def update_vp_position(self, vp_object, angles):
         vp_object.axis = vpython.vector(*np.dot(vp_transf_mat, self.nonlin_x_expression(angles)))
         return self.vp_object
@@ -153,7 +168,7 @@ class A_Arm(Linkage):
         self.orthogonal_link_position = np.dot(self.outer_product_matrix, np.atleast_2d(self.ball_joint_pos).T)
 
 
-    #override
+    @override
     def local_A_matrix(self):
         ball_joint_colum_vec = np.atleast_2d(self.ball_joint_pos).T
 
@@ -165,17 +180,17 @@ class A_Arm(Linkage):
     def local_B_vector(self):
         return self.frame_pickup_0 - self.orthogonal_link_position
 
-    #override
+    @override
     def nonlin_x_expression(self, vars):
         alpha = vars
         return np.array([np.cos(alpha), np.sin(alpha)])
     
-    #override
+    @override
     def approx_nonlin_x(self, vars):
         alpha = vars
         return np.array([approx_cos(alpha), approx_sin(alpha)])
     
-    #override
+    @override
     def jacobian(self, vars):
         alpha = vars
         return np.array([-np.sin(alpha), np.cos(alpha)]) 
@@ -188,12 +203,20 @@ class Strut:...
 class Trailing_Arm:...
 
 class Upright(Wheel_Carrier):
+    input_count = 6
+    linear_input_count = 12
+    input_names = ["x", "y", "z", "theta", "phi", "gamma"]
+    #output_count = 15#TODO update this BS
     def __init__(self, pickups):
         self.pickup_count = pickups.shape[0]
         self.pickups = pickups
-        super().__init__(6, 12, self.pickup_count*3)
-    
-    #override
+
+    @property
+    @override
+    def output_count(self):
+        return 3*self.pickup_count
+
+    @override
     def local_A_matrix(self):
         #TODO A_pickups generation code can definitely be improved
         A_wheel = np.block([[np.identity(3)]]*self.pickup_count)
@@ -208,13 +231,13 @@ class Upright(Wheel_Carrier):
 
         return np.block([A_wheel, A_pickups])
     
-    #override
+    @override
     def nonlin_x_expression(self, vars):
         wheel_x, wheel_y, wheel_z, theta, phi, gamma = vars
          
         return np.concatenate([[wheel_x, wheel_y, wheel_z], R.from_euler('XYZ', [theta, phi, gamma]).as_matrix().T.flatten()])
     
-    #override
+    @override
     def approx_nonlin_x(self, vars):
         wheel_x, wheel_y, wheel_z, theta, phi, gamma = vars
 
@@ -233,8 +256,8 @@ class Upright(Wheel_Carrier):
          
         return np.concatenate([[wheel_x, wheel_y, wheel_z], r.tolist()])
     
-        #override
-    #override
+    
+    @override
     def jacobian(self, vars):
         wheel_x, wheel_y, wheel_z, theta, phi, gamma = vars
 
@@ -272,7 +295,7 @@ class Upright(Wheel_Carrier):
 
         return block_diag(wheel_jac, [dr_dtheta, dr_dphi, dr_dgamma])
 
-    #override
+    @override
     def create_vp_object(self, diameter=15, axis_len=40, color=vpython.color.cyan):
         output = np.zeros(3+2*self.pickup_count, dtype=vpython.standardAttributes)
         r = diameter/2
@@ -295,9 +318,8 @@ class Upright(Wheel_Carrier):
         
         return vpython.compound(output.tolist(), origin=vpython.vector(0,0,0), axis=vpython.vector(1,0,0), up=vpython.vector(0,1,0), color=color)
     
-        #override
     
-    #override
+    @override
     def update_vp_position(self, vars):
         theta, phi, gamma = vars[3:]
 
