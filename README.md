@@ -13,6 +13,8 @@ There are various existing tools for analyzing vehicle suspension, however these
 
 <ins>Todo List</ins>
 - [x] Fix indexing in kinematic_model class so that it can work with various types of links
+- [ ] Use least squares method to improve inital guesses for numerical analysis
+- [ ] Improve test coverage of the suspension componenets
 - [ ] Refactor matrix generation to reduce copying of arrays
 - [ ] Create auxiliary pickups for push rods, sway bars, and coilovers
 - [ ] Figure out why the jacobian test is failing
