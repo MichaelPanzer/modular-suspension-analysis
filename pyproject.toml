@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "modsuskinematics"
+version = "0.0.1"
+authors = [
+  { name="Michael Panzer", email="michaelpanzer04@gmail.com" },
+]
+description = ""
+readme = "README.md"
+requires-python = ">=3.12"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: GPLv3",
+    "Operating System :: OS Independent",
+]
+
+
+
+[tool.pytest.ini_options]
+addopts = [
+    "--import-mode=importlib",
+]
