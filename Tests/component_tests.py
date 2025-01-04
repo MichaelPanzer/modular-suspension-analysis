@@ -1,6 +1,5 @@
 import numpy as np
-from suspension_components import *
-import sympy
+from .suspension_kinematics.components import *
 import pytest
 
 def test_A_arm_rotation_length_dosent_change(): 
