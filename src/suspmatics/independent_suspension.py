@@ -54,7 +54,7 @@ class Kinematic_Model:
         return np.atleast_2d(np.block(B_vector.tolist())).T
 
     def generate_x_nonlinear(self, vars):
-        x = np.zeros(27) # fix this so inital length is the sum of all the linear input counts
+        x = np.zeros(27) # fix this so initial length is the sum of all the linear input counts
 
 
         x[0:self.wheel_carrier.linear_input_count] = self.wheel_carrier.nonlin_x_expression(vars[0:self.wheel_carrier.input_count]) #wheel carrier position and rotation
@@ -110,7 +110,7 @@ class Kinematic_Model:
 
         return np.concatenate((nonlin_expressions, driving_exprs))
     
-    #this probably isnt nessecary
+    #TODO delete this
     def approx_sys_of_eq(self, vars, driving_vals):
             x = self.approx_x_nonlinear(vars)
 
@@ -124,13 +124,13 @@ class Kinematic_Model:
 
             return np.concatenate((nonlin_expressions, np.array([driving_exprs])))
     
-    #TODO write some fucking tests stoopidhead
+
     def jacobian(self, vars, driving_var_indices):
         jacobians = np.zeros(self.linkages.shape[0] + 1, dtype=np.ndarray)
         link_angles = vars[self.wheel_carrier.input_count:]
         jacobians[0] = self.wheel_carrier.jacobian(vars[0:self.wheel_carrier.input_count])
 
-        #the first index is deticated to the wheel jacobian
+        #the first index is dedicated to the wheel jacobian
         link_jacobians = jacobians[1:]
         j = 0 #link input index
         for i, link in enumerate(self.linkages):

@@ -12,11 +12,11 @@ def test_A_arm_rotation_length_doesnt_change():
 
     a_arm = A_Arm(np.array([0,0,0]), np.array([p1x, p1y, p1z]), outer_ball_joint)
 
-    rotation_mat, offset_vector = a_arm.local_A_matrix()#TODO change this so rotation mat and offset vector are two different operations
+    rotation_mat = a_arm.local_A_matrix()
 
     
     cos, sin = np.cos(2), np.sin(2)
-    final_ball_joint_pos = np.dot(rotation_mat, np.array([[cos], [sin]])) + offset_vector
+    final_ball_joint_pos = np.dot(rotation_mat, np.array([[cos], [sin]])) 
 
     assert np.sum(outer_ball_joint**2) != pytest.approx(np.sum(final_ball_joint_pos**2))
 

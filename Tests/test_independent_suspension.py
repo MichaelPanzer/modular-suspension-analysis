@@ -71,10 +71,10 @@ def test_jacobian():
 
     vars = np.random.rand(16)
 
-    my_jacobian = fl.jacobian(vars, 2)
+    my_jacobian = fl.jacobian(vars, [2])
 
     def func(vars):
-        return fl.full_sys_of_eq(vars, 2, np.random.rand())
+        return fl.full_sys_of_eq(vars, ([2], [np.random.rand()]))
     
     correct_jacobian = jacobi(func, vars)[0]
 

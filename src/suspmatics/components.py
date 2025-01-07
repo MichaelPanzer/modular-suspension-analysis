@@ -143,6 +143,11 @@ class Single_Link(Linkage):
         return self.vp_object
     
 class A_Arm(Linkage):
+    linear_input_count = 3
+    output_count = 3
+    input_names = ["alpha"]
+    input_count = len(input_names)
+    
     def __init__(self, frame_pickup_0, frame_pickup_1, ball_joint_pos):
         self.frame_pickup_0 = frame_pickup_0
         self.frame_pickup_1 = frame_pickup_1
@@ -151,8 +156,6 @@ class A_Arm(Linkage):
 
         pickup_1_to_0 = frame_pickup_0-frame_pickup_1
         rotation_axis_unit_vector = np.atleast_2d(pickup_1_to_0 / np.linalg.norm(pickup_1_to_0))
-
-        #print(rotation_axis_unit_vector)
 
         #saves pivot axis as unit vector
         pivot = frame_pickup_0 - frame_pickup_1
@@ -167,16 +170,16 @@ class A_Arm(Linkage):
         #this is the point on the pivot axis where the ball joint position vector is orthogonal to axis
         self.orthogonal_link_position = np.dot(self.outer_product_matrix, np.atleast_2d(self.ball_joint_pos).T)
 
-
     @override
     def local_A_matrix(self):
-        ball_joint_colum_vec = np.atleast_2d(self.ball_joint_pos).T
+        ball_joint_column_vec = np.atleast_2d(self.ball_joint_pos).T
 
-        cos_colum = np.dot((np.identity(3)-self.outer_product_matrix), ball_joint_colum_vec)
-        sin_colum = np.dot(self.cross_product_matrix, ball_joint_colum_vec)
+        cos_column = np.dot((np.identity(3)-self.outer_product_matrix), ball_joint_column_vec)
+        sin_column = np.dot(self.cross_product_matrix, ball_joint_column_vec)
 
-        return np.block([cos_colum, sin_colum])
+        return np.block([cos_column, sin_column])
     
+    @override
     def local_B_vector(self):
         return self.frame_pickup_0 - self.orthogonal_link_position
 
@@ -194,6 +197,14 @@ class A_Arm(Linkage):
     def jacobian(self, vars):
         alpha = vars
         return np.array([-np.sin(alpha), np.cos(alpha)]) 
+    
+    @override
+    def create_vp_object():
+        pass
+
+    @override
+    def update_vp_position():
+        pass
 
 #TODO add stuff for these 
 class H_Arm:...
@@ -241,7 +252,7 @@ class Upright(Wheel_Carrier):
     def approx_nonlin_x(self, vars):
         wheel_x, wheel_y, wheel_z, theta, phi, gamma = vars
 
-        #TODO this whole thing can be made so much more efficent
+        #TODO this whole thing can be made so much more efficient
         r_x = np.array([[1, 0, 0],
                         [0, approx_cos(theta), -1*approx_sin(theta)],
                         [0, approx_sin(theta), approx_cos(theta)]])
@@ -263,7 +274,7 @@ class Upright(Wheel_Carrier):
 
         wheel_jac = np.identity(3)
 
-        #TODO this whole thing can be made so much more efficent
+        #TODO this whole thing can be made so much more efficient
         r_x = np.array([[1, 0, 0],
                         [0, np.cos(theta), -np.sin(theta)],
                         [0, np.sin(theta), np.cos(theta)]])
@@ -300,9 +311,9 @@ class Upright(Wheel_Carrier):
         output = np.zeros(3+2*self.pickup_count, dtype=vpython.standardAttributes)
         r = diameter/2
 
-        #the first 3 objects are the basis vectors for the local frame of refrence
+        #the first 3 objects are the basis vectors for the local frame of reference
         output[0] = vpython.arrow(axis=vpython.vector(0,0,axis_len), color=vpython.color.blue)
-        output[1] = vpython.arrow(axis=vpython.vector(-axis_len,0,0), color=vpython.color.green)#wheel is axisymetric so these mfs prolly arent nessecary
+        output[1] = vpython.arrow(axis=vpython.vector(-axis_len,0,0), color=vpython.color.green)#wheel is axisymmetric so these mfs prolly aren't necessary
         output[2] = vpython.arrow(axis=vpython.vector(0,-axis_len,0), color=vpython.color.red)
 
         #All remaining objects are for the pickup points
