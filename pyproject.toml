@@ -1,9 +1,9 @@
 [build-system]
-requires = ["setuptools>=61.0"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling>=61.0"]
+build-backend = "hatchling.build_meta"
 
 [project]
-name = "modsuskinematics"
+name = "suspmatics"
 version = "0.0.1"
 authors = [
   { name="Michael Panzer", email="michaelpanzer04@gmail.com" },
@@ -23,3 +23,4 @@ classifiers = [
 addopts = [
     "--import-mode=importlib",
 ]
+pythonpath = "src"

@@ -1,5 +1,5 @@
 import numpy as np
-from suspension_kinematics.components import *
+from suspmatics.components import *
 from scipy.linalg import block_diag
 from scipy.linalg import lu
 from collections.abc import Iterable

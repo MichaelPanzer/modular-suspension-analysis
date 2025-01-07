@@ -1,8 +1,11 @@
+import importlib
 import numpy as np
-from .suspension_kinematics.components import *
+from suspmatics.components import *
 import pytest
 
-def test_A_arm_rotation_length_dosent_change(): 
+importlib
+
+def test_A_arm_rotation_length_doesnt_change(): 
     rx, ry, rz, p1x, p1y, p1z = 15, 3, 6, 0, -5, 2
 
     outer_ball_joint = np.array([rx, ry, rz])
@@ -17,7 +20,7 @@ def test_A_arm_rotation_length_dosent_change():
 
     assert np.sum(outer_ball_joint**2) != pytest.approx(np.sum(final_ball_joint_pos**2))
 
-def test_Single_Link_length_dosent_change():
+def test_Single_Link_length_doesnt_change():
     len = 16.0
     link = Single_Link(np.array([5,2,8]), len)
 

@@ -1,4 +1,4 @@
-from suspension_kinematics.independent_suspension import Kinematic_Model
+from suspmatics.independent_suspension import Kinematic_Model
 import scipy as sp
 
 import numpy as np

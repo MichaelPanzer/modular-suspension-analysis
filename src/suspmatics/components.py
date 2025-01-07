@@ -236,7 +236,7 @@ class Upright(Wheel_Carrier):
         wheel_x, wheel_y, wheel_z, theta, phi, gamma = vars
          
         return np.concatenate([[wheel_x, wheel_y, wheel_z], R.from_euler('XYZ', [theta, phi, gamma]).as_matrix().T.flatten()])
-    
+     
     @override
     def approx_nonlin_x(self, vars):
         wheel_x, wheel_y, wheel_z, theta, phi, gamma = vars
