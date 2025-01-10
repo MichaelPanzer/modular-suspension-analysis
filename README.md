@@ -3,7 +3,7 @@ This is a python package built to analyze suspension kinematics. It is designed 
 
 
 # Motivation
-There are various existing tools for analyzing vehicle suspension, however these tools are either behind a paywall or limited to specific suspension designs. I want to create a FOSS suspension analysis tool that is powerful enough to be used in grassroots motorsports, fleible enough to be used with various different designs, and easy enough to use for a gear head with a bit of programming knowledge.
+There are various existing tools for analyzing vehicle suspension, however these tools are either behind a paywall or limited to specific suspension designs. I want to create a FOSS suspension analysis tool that is powerful enough to be used in grassroots motorsports, flexible enough to be used with various different designs, and easy enough to use for a gear head with a bit of programming knowledge.
 
 # Project Status
 <ins>Recent Progress</ins>
@@ -13,13 +13,13 @@ There are various existing tools for analyzing vehicle suspension, however these
 
 <ins>Todo List</ins>
 - [x] Fix indexing in kinematic_model class so that it can work with various types of links
-- [ ] Use least squares method to improve inital guesses for numerical analysis
-- [ ] Improve test coverage of the suspension componenets
+- [ ] Use least squares method to improve initial guesses for numerical analysis
+- [ ] Improve test coverage of the suspension components
 - [ ] Refactor matrix generation to reduce copying of arrays
-- [ ] Create auxiliary pickups for push rods, sway bars, and coilovers
+- [ ] Create auxiliary pickups for push rods, sway bars, coilovers, etc.
 - [ ] Figure out why the jacobian test is failing
 - [ ] Add ability to import and save as csv file
 - [ ] Add methods for A-arm and H-arm suspension components
-- [ ] Add curve fitting algorithms
+- [ ] Add curve fitting algorithms to optimize suspension geometry
 
 
