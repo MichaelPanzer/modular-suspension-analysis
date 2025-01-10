@@ -160,19 +160,5 @@ class Kinematic_Model:
         return
 
 
-class Five_Link(Kinematic_Model):
-    def __init__(self, frame_pickups, link_lengths, upright_pickups):
-        linkages = np.zeros(5, dtype=Linkage)
-
-        for i, link in enumerate(linkages):
-            linkages[i] = Single_Link(frame_pickups[i], link_lengths[i])
-
-        upright = Upright(upright_pickups)
-
-        super(Five_Link, self).__init__(linkages, upright)
-
-
-    
-
         
     
