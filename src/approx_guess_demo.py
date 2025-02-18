@@ -20,18 +20,19 @@ fl = Kinematic_Model.five_link(frame_pickups, link_lengths, upright_pickups)
 #solves suspension kinematics system of equations in terms of z
 def solve_system(driving_args, guess, kinematic_model, method='hybr'): #driving args is tuple of lists
     
-    def function(vars, args):
-        return kinematic_model.full_sys_of_eq(vars, (driving_args[0], args))
+    def function(vars):
+        return kinematic_model.full_sys_of_eq(vars, driving_args)
     
-    def jacobian(vars, args):
+    def jacobian(vars):
         return kinematic_model.jacobian(vars, driving_args[0])
 
     
-    return sp.optimize.root(function, guess, args=driving_args[1],jac=jacobian, method=method) 
+    return sp.optimize.root(function, guess,jac=jacobian, method=method) 
 
 
-x_0_lm = solve_system(([0,1,2,3,4,5], [0,800,0,0,0,0]), [0,0,800,0,0,0,np.pi/2,0,np.pi/2,0,np.pi/2,0,np.pi/2,0,np.pi/2,0], fl, method='lm')
-x_0_hy = solve_system(([2,], [0,]), x_0_lm.x, fl, method='hybr')
+x_0_lm1 = solve_system(([0,1,2,3,4,5], [0,800,0,0,0,0]), [0,0,800,0,0,0,np.pi/2,0,np.pi/2,0,np.pi/2,0,np.pi/2,0,np.pi/2,0], fl, method='lm')
+x_0_lm2 = fl.initial_guess(([0,1,2,3,4,5], [0,0,800,0,0,0]))
+x_0_hy = solve_system(([2,], [0,]), x_0_lm2.x, fl, method='hybr')
 
-diff = x_0_lm.x-x_0_hy.x
+diff = x_0_lm1.x-x_0_lm2.x
 print(diff.dot(diff))

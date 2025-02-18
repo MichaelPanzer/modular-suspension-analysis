@@ -1,16 +1,21 @@
 import numpy as np
+import scipy as sp
 from suspmatics.components import *
 from scipy.linalg import block_diag
 from scipy.linalg import lu
 from collections.abc import Iterable
 
+
 class Kinematic_Model:
  
-    def __init__(self, linkages: Iterable, wheel_carrier):
+    def __init__(self, linkages: Iterable[Linkage], wheel_carrier: Wheel_Carrier):
         self.linkages = linkages
         self.wheel_carrier = wheel_carrier
 
+        #self.components = np.array([self.wheel_carrier: Component] + self.linkages: Iterable[Component])
         self.components = np.concatenate(([self.wheel_carrier], self.linkages))
+        self.input_count = sum(comp.input_count for comp in self.components)
+
 
         self.a_mat = self.global_A_matrix()
         self.b_vec = self.global_B_vector()
@@ -30,6 +35,7 @@ class Kinematic_Model:
         upright = Upright(upright_pickups)
 
         return Kinematic_Model(linkages, upright)
+    
     def global_A_matrix(self):
         wheelcarrier_local_A = self.wheel_carrier.local_A_matrix()
         link_local_A = np.zeros(self.linkages.size, dtype=np.ndarray)
@@ -95,7 +101,10 @@ class Kinematic_Model:
 
         return x
     
-    def full_sys_of_eq(self, vars, driving_vals):#driving vals is a tuple of lists ([indexes], [values])
+    def full_sys_of_eq(self, vars, driving_vals):
+        """
+        driving vals is a tuple of lists ([indexes], [values])
+        """
         x = self.generate_x_nonlinear(vars)
 
         nonlin_expressions = (np.dot(self.a_mat, x).T - self.b_vec.T)[0]
@@ -123,7 +132,6 @@ class Kinematic_Model:
                 driving_exprs[i] = x[var_index] - value
 
             return np.concatenate((nonlin_expressions, np.array([driving_exprs])))
-    
 
     def jacobian(self, vars, driving_var_indices):
         jacobians = np.zeros(self.linkages.shape[0] + 1, dtype=np.ndarray)
@@ -146,6 +154,46 @@ class Kinematic_Model:
             driving_var_matrix[i,var_index] = 1
 
         return np.dot(np.vstack([self.a_mat, driving_var_matrix]), jacobian_matrix.T)
+
+    def fixed_sys_of_eq(self, vars, fixed_vals):
+        """
+        driving vals is an iterable of tuples [(indexes, value)]
+        This creates a system of equations with the driving vals fixed and vars representing all non driven parameters
+        """
+
+        full_vars = np.zeros(len(vars)+len(driving_vals))
+
+        driving_vals_iter = iter(driving_vals)
+        vars_iter = iter(vars)
+
+        current_driving_val = next(driving_vals_iter)
+
+        for var, i in enumerate(full_vars):
+            #This checks if it is at the index of a driving val
+            if(current_driving_val[0] == i):
+                #At driving val index, insert value
+                full_vars[i] = current_driving_val[1]
+                current_driving_val = next(driving_vals_iter)
+            else:
+                #At anything other than driving val index, insert var
+                full_vars[i] = next(vars_iter)
+
+    def initial_guess(self, driving_vals, conv_tol = 0.1):#fixed vals is a tuple of lists ([indexes], [values]) 
+       
+        def function(vars):
+            return self.full_sys_of_eq(vars, driving_vals)
+    
+        def jacobian(vars):
+            return self.jacobian(vars, driving_vals[0])
+
+        #find guess based on default position of links & fixed
+        #guess = np.zeros(self.input_count + len(fixed_vals)) #make length total number of inputs to the function + length of fixed_vals
+        #fill guess with default link positions
+        guess = np.array(np.concatenate([comp.datum_vars for comp in self.components]))
+
+        #print(guess)
+
+        return sp.optimize.root(function, guess, jac=jacobian, method="lm") 
 
     def render(self, vars):
         self.wheel_carrier.update_vp_position(vars[0:6])

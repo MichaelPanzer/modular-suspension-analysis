@@ -66,20 +66,27 @@ def test_B():
     b = fl.global_B_vector()
     assert np.array_equal(b, correct_output)
 
+
 def test_jacobian():
+    """
+    For some reason the rows with the driving values are not computed properly with the numerical approximation
+    """
     fl = Five_Link(frame_pickups, lengths, upright_pickups)
 
     vars = np.random.rand(16)
 
-    my_jacobian = fl.jacobian(vars, [2])
+    my_jacobian = fl.jacobian(vars, [2, 1])
 
     def func(vars):
-        return fl.full_sys_of_eq(vars, ([2], [np.random.rand()]))
+        return fl.full_sys_of_eq(vars, ([2, 1], [np.random.rand(), np.random.rand()]))
     
-    correct_jacobian = jacobi(func, vars)[0]
+    correct_jacobian, est_err = jacobi(func, vars, rtol=10e-10)
 
-    print(my_jacobian-correct_jacobian)
+    real_err = np.absolute(my_jacobian-correct_jacobian)
 
+
+    print(real_err)
     
     np.testing.assert_almost_equal(my_jacobian, correct_jacobian)
+
 

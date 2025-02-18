@@ -4,7 +4,8 @@ import numpy as np
 from scipy.linalg import block_diag
 from scipy.spatial.transform import Rotation as R
 import vpython
-import sympy
+from collections.abc import Iterable
+
 
 sin_approx_a = 24/np.pi**4
 cos_approx_a = (60*np.pi**2 - 720) / np.pi**5
@@ -16,6 +17,7 @@ def approx_cos(angle):
 
 vp_transf_mat = np.array([[0,-1,0], [0,0,-1], [1,0,0]]) #this matrix transforms from the SAE coordinate system to the vpython coordinate system
 class Component(ABC):
+
     @property
     @abstractmethod
     def input_count(self):
@@ -35,6 +37,10 @@ class Component(ABC):
     @abstractmethod
     def input_names(self):
         pass
+
+    def __init__(self, datum_vars):
+        self.datum_vars = datum_vars
+
 
     @abstractmethod
     def local_A_matrix(self):
@@ -56,12 +62,20 @@ class Component(ABC):
     def update_vp_position():
         pass
 
-class Linkage(Component):    
+class Linkage(Component):   
+
+    def __init__(self, datum_vars):
+        super().__init__(datum_vars)
+
+
     @abstractmethod
     def local_B_vector(self):
         pass
 
 class Wheel_Carrier(Component): 
+    def __init__(self, datum_vars):
+        super().__init__(datum_vars)
+
     pass
 
 
@@ -71,11 +85,11 @@ class Single_Link(Linkage):
     output_count = 3
     input_names = ["alpha", "beta"]
 
-    def __init__(self, frame_pickup, length, datum_vars=(np.pi/2,0)):
+    def __init__(self, frame_pickup: Iterable[float], length, datum_vars=[np.pi/2, 0]):
+        super().__init__(datum_vars)
         self.frame_pickup = frame_pickup
         self.length = length
         #self.vp_object = 
-        self.datum_vars=datum_vars
 
     @override
     def local_A_matrix(self):
@@ -218,7 +232,8 @@ class Upright(Wheel_Carrier):
     linear_input_count = 12
     input_names = ["x", "y", "z", "theta", "phi", "gamma"]
     #output_count = 15#TODO update this BS
-    def __init__(self, pickups):
+    def __init__(self, pickups, datum_vars=[0,0,800,0,0,0]):
+        super().__init__(datum_vars)
         self.pickup_count = pickups.shape[0]
         self.pickups = pickups
 
