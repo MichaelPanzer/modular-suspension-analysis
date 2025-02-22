@@ -48,3 +48,7 @@ def test_Upright_lengths_dont_change():
     x = upright.nonlin_x_expression((0,0,0, theta, phi, gamma))
 
     assert np.sum(np.dot(local_A, x)**2) == pytest.approx(np.sum(upright_pickups**2))
+
+
+def test_H_arm_length_doesnt_change():
+    pass
