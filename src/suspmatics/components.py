@@ -11,58 +11,55 @@ from collections.abc import Iterable
 vp_transf_mat = np.array([[0,-1,0], [0,0,-1], [1,0,0]]) #this matrix transforms from the SAE coordinate system to the vpython coordinate system
 
 class Component(ABC):
-
     @property
     @abstractmethod
-    def input_count(self):
+    def input_count(self) -> int: 
         pass
 
     @property
     @abstractmethod
-    def linear_input_count(self):
+    def linear_input_count(self) -> int:
         pass
 
     @property
     @abstractmethod
-    def output_count(self):
+    def output_count(self) -> int:
         pass
 
     @property
     @abstractmethod
-    def input_names(self):
+    def input_names(self) -> Iterable[str]:
         pass
 
-    def __init__(self, datum_vars):
+    def __init__(self, datum_vars: Iterable[float]):
         self.datum_vars = datum_vars
 
 
     @abstractmethod
-    def local_A_matrix(self):
+    def local_A_matrix(self) -> np.ndarray:
         pass
 
     @abstractmethod
-    def nonlin_x_expression(self, vars):
+    def nonlin_x_expression(self, vars: Iterable[float]) -> np.ndarray:
         pass
 
     @abstractmethod
-    def jacobian(self, vars):
+    def jacobian(self, vars: Iterable[float]) -> np.ndarray:
         pass
 
     @abstractmethod
-    def create_vp_object():
+    def create_vp_object() -> vpython.compound:
         pass
 
     @abstractmethod
-    def update_vp_position():
+    def update_vp_position() -> vpython.compound:
         pass
 class Linkage(Component):   
-
     def __init__(self, datum_vars):
         super().__init__(datum_vars)
 
-
     @abstractmethod
-    def local_B_vector(self):
+    def local_B_vector(self) -> np.ndarray:
         pass
 class Wheel_Carrier(Component): 
     def __init__(self, datum_vars):
@@ -201,7 +198,7 @@ class Upright(Wheel_Carrier):
     linear_input_count = 12
     input_names = ["x", "y", "z", "theta", "phi", "gamma"]
     #output_count = 15#TODO update this BS
-    def __init__(self, pickups, datum_vars=[0,0,800,0,0,0]):
+    def __init__(self, pickups: Iterable[Iterable[float]], datum_vars=[0.,0.,0.,0.,0.,0.]):
         super().__init__(datum_vars)
         self.pickup_count = pickups.shape[0]
         self.pickups = pickups
