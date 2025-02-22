@@ -7,15 +7,9 @@ import vpython
 from collections.abc import Iterable
 
 
-sin_approx_a = 24/np.pi**4
-cos_approx_a = (60*np.pi**2 - 720) / np.pi**5
-cos_approx_b = (60-3*np.pi**2) / np.pi**3
-def approx_sin(angle):
-    return sin_approx_a*angle
-def approx_cos(angle):
-    return cos_approx_a*angle**2 + cos_approx_b
 
 vp_transf_mat = np.array([[0,-1,0], [0,0,-1], [1,0,0]]) #this matrix transforms from the SAE coordinate system to the vpython coordinate system
+
 class Component(ABC):
 
     @property
@@ -61,7 +55,6 @@ class Component(ABC):
     @abstractmethod
     def update_vp_position():
         pass
-
 class Linkage(Component):   
 
     def __init__(self, datum_vars):
@@ -71,12 +64,12 @@ class Linkage(Component):
     @abstractmethod
     def local_B_vector(self):
         pass
-
 class Wheel_Carrier(Component): 
     def __init__(self, datum_vars):
         super().__init__(datum_vars)
 
     pass
+
 
 
 class Single_Link(Linkage):
@@ -89,7 +82,6 @@ class Single_Link(Linkage):
         super().__init__(datum_vars)
         self.frame_pickup = frame_pickup
         self.length = length
-        #self.vp_object = 
 
     @override
     def local_A_matrix(self):
@@ -103,24 +95,6 @@ class Single_Link(Linkage):
     def nonlin_x_expression(self, vars):
         alpha, beta = vars
         return np.array([np.cos(beta)*np.cos(alpha), np.cos(beta)*np.sin(alpha), np.sin(beta)])   
-    
-    @override
-    def approx_nonlin_x(self, vars):
-        alpha, beta = vars
-        datum_alpha, datum_beta = self.datum_vars
-        delta_alpha, delta_beta = vars[0]-datum_alpha, vars[1]-datum_beta
-
-
-        c_dat_a = np.cos(datum_alpha)
-        s_dat_a = np.sin(datum_alpha)
-        c_dat_b = np.cos(datum_beta)
-        s_dat_b = np.sin(datum_beta)
-
-        #datum is used as an offset to keep approximation domain +-90 deg
-        cos_beta = approx_cos(delta_beta)*c_dat_b - approx_sin(delta_beta)*s_dat_b
-        return np.array([ cos_beta*(approx_cos(delta_alpha)*c_dat_b - approx_sin(delta_alpha)*s_dat_a), 
-                         cos_beta*(approx_cos(delta_alpha)*s_dat_a + approx_sin(delta_alpha)*c_dat_a), 
-                         approx_cos(delta_beta)*s_dat_b + approx_sin(delta_beta)*c_dat_b])
     
     @override
     def jacobian(self, vars):
@@ -157,10 +131,10 @@ class Single_Link(Linkage):
         return self.vp_object
     
 class A_Arm(Linkage):
+    input_count = 1
     linear_input_count = 3
     output_count = 3
     input_names = ["alpha"]
-    input_count = len(input_names)
     
     def __init__(self, frame_pickup_0, frame_pickup_1, ball_joint_pos):
         self.frame_pickup_0 = frame_pickup_0
@@ -201,11 +175,6 @@ class A_Arm(Linkage):
     def nonlin_x_expression(self, vars):
         alpha = vars
         return np.array([np.cos(alpha), np.sin(alpha)])
-    
-    @override
-    def approx_nonlin_x(self, vars):
-        alpha = vars
-        return np.array([approx_cos(alpha), approx_sin(alpha)])
     
     @override
     def jacobian(self, vars):
@@ -262,26 +231,6 @@ class Upright(Wheel_Carrier):
         wheel_x, wheel_y, wheel_z, theta, phi, gamma = vars
          
         return np.concatenate([[wheel_x, wheel_y, wheel_z], R.from_euler('XYZ', [theta, phi, gamma]).as_matrix().T.flatten()])
-     
-    @override
-    def approx_nonlin_x(self, vars):
-        wheel_x, wheel_y, wheel_z, theta, phi, gamma = vars
-
-        #TODO this whole thing can be made so much more efficient
-        r_x = np.array([[1, 0, 0],
-                        [0, approx_cos(theta), -1*approx_sin(theta)],
-                        [0, approx_sin(theta), approx_cos(theta)]])
-        r_y = np.array([[approx_cos(phi), 0, approx_sin(phi)],
-                        [0, 1, 0],
-                        [-1*approx_sin(phi), 0, approx_cos(phi)]])
-        r_z = np.array([[approx_cos(gamma), -1*approx_sin(gamma), 0],
-                        [approx_sin(gamma), approx_cos(gamma), 0],
-                        [0, 0, 1]])
-
-        r = (r_x.dot(r_y).dot(r_z)).T.flatten()
-         
-        return np.concatenate([[wheel_x, wheel_y, wheel_z], r.tolist()])
-    
     
     @override
     def jacobian(self, vars):
@@ -343,7 +292,6 @@ class Upright(Wheel_Carrier):
             pickup_objects[2*i+1] = vpython.cone(pos=cylinder_axis, axis=unit_axis*diameter, radius=r, color=vpython.color.magenta)
         
         return vpython.compound(output.tolist(), origin=vpython.vector(0,0,0), axis=vpython.vector(1,0,0), up=vpython.vector(0,1,0), color=color)
-    
     
     @override
     def update_vp_position(self, vars):
