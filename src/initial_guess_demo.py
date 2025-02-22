@@ -26,13 +26,20 @@ def solve_system(driving_args, guess, kinematic_model, method='hybr'): #driving 
     def jacobian(vars):
         return kinematic_model.jacobian(vars, driving_args[0])
 
-    
     return sp.optimize.root(function, guess,jac=jacobian, method=method) 
 
 
-x_0_lm1 = solve_system(([0,1,2,3,4,5], [0,800,0,0,0,0]), [0,0,800,0,0,0,np.pi/2,0,np.pi/2,0,np.pi/2,0,np.pi/2,0,np.pi/2,0], fl, method='lm')
-x_0_lm2 = fl.initial_guess(([0,1,2,3,4,5], [0,0,800,0,0,0]))
-x_0_hy = solve_system(([2,], [0,]), x_0_lm2.x, fl, method='hybr')
+x_0_lm1 = solve_system(([0,1,2,3,4,5], [0,800,0,0,0,0]), [0,800,0,0,0,0,np.pi/2,0,np.pi/2,0,np.pi/2,0,np.pi/2,0,np.pi/2,0], fl, method='lm')
+x_0_lm2 = fl.initial_guess(([0,1,2,3,4,5], [0,800,0,0,0,0]))
 
+x_0_hy1 = solve_system(([2,], [0,]), x_0_lm1.x, fl, method='hybr')
+x_0_hy2 = solve_system(([2,], [0,]), x_0_lm2.x, fl, method='hybr')
+
+#difference between two initial guesses
 diff = x_0_lm1.x-x_0_lm2.x
+print(diff.dot(diff))
+
+
+#difference between initial guess 2 & its final answer
+diff = x_0_hy2.x-x_0_lm2.x
 print(diff.dot(diff))
