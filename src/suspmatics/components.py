@@ -5,10 +5,26 @@ from scipy.linalg import block_diag
 from scipy.spatial.transform import Rotation as R
 import vpython
 from collections.abc import Iterable
+from numbers import Number
+
+"""
+    This matrix transforms from the SAE coordinate system to the vpython coordinate system
+
+    (x_vp = vp_transf_mat * x_sae)
+
+    SAE:
+    x -> forward
+    y -> starboard (right)
+    z -> down
+
+    vpython: TODO check ur notes stoopidface
+    x ->
+    y ->
+    z ->
+"""
+vp_transf_mat = np.array([[0,-1,0], [0,0,-1], [1,0,0]]) 
 
 
-
-vp_transf_mat = np.array([[0,-1,0], [0,0,-1], [1,0,0]]) #this matrix transforms from the SAE coordinate system to the vpython coordinate system
 
 class Component(ABC):
     @property
@@ -31,7 +47,7 @@ class Component(ABC):
     def input_names(self) -> Iterable[str]:
         pass
 
-    def __init__(self, datum_vars: Iterable[float]):
+    def __init__(self, datum_vars: Iterable[Number]):
         self.datum_vars = datum_vars
 
 
@@ -40,11 +56,11 @@ class Component(ABC):
         pass
 
     @abstractmethod
-    def nonlin_x_expression(self, vars: Iterable[float]) -> np.ndarray:
+    def nonlin_x_expression(self, vars: Iterable[Number]) -> np.ndarray:
         pass
 
     @abstractmethod
-    def jacobian(self, vars: Iterable[float]) -> np.ndarray:
+    def jacobian(self, vars: Iterable[Number]) -> np.ndarray:
         pass
 
     @abstractmethod
@@ -68,14 +84,16 @@ class Wheel_Carrier(Component):
     pass
 
 
-
+"""
+    Single_Link models a rigid tension/compression link with unbounded ball joints at either end 
+"""
 class Single_Link(Linkage):
     input_count = 2
     linear_input_count = 3
     output_count = 3
     input_names = ["alpha", "beta"]
 
-    def __init__(self, frame_pickup: Iterable[float], length, datum_vars=[np.pi/2, 0]):
+    def __init__(self, frame_pickup: Iterable[Number], length: Number, datum_vars=[np.pi/2, 0]):
         super().__init__(datum_vars)
         self.frame_pickup = frame_pickup
         self.length = length
@@ -127,13 +145,16 @@ class Single_Link(Linkage):
         vp_object.axis = vpython.vector(*np.dot(vp_transf_mat, self.nonlin_x_expression(angles)))
         return self.vp_object
     
+"""
+    A_Arm models a rigid linkage with a pivot axis (two ball joints) on the inboard side and a ball joint on the outboard side
+"""
 class A_Arm(Linkage):
     input_count = 1
     linear_input_count = 3
     output_count = 3
     input_names = ["alpha"]
     
-    def __init__(self, frame_pickup_0, frame_pickup_1, ball_joint_pos):
+    def __init__(self, frame_pickup_0: Iterable[Number], frame_pickup_1: Iterable[Number], ball_joint_pos: Iterable[Number]):
         self.frame_pickup_0 = frame_pickup_0
         self.frame_pickup_1 = frame_pickup_1
 
@@ -193,12 +214,16 @@ class Strut:...
 
 class Trailing_Arm:...
 
+
+"""
+    Upright can be used to model a wheel carrier bounded by a collection of ball joints
+"""
 class Upright(Wheel_Carrier):
     input_count = 6
     linear_input_count = 12
     input_names = ["x", "y", "z", "theta", "phi", "gamma"]
     #output_count = 15#TODO update this BS
-    def __init__(self, pickups: Iterable[Iterable[float]], datum_vars=[0.,0.,0.,0.,0.,0.]):
+    def __init__(self, pickups: Iterable[Iterable[Number]], datum_vars=[0.,0.,0.,0.,0.,0.]):
         super().__init__(datum_vars)
         self.pickup_count = pickups.shape[0]
         self.pickups = pickups
