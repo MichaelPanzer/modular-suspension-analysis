@@ -207,11 +207,9 @@ class A_Arm(Linkage):
     def update_vp_position():
         pass
 
-#TODO add stuff for these 
+#TODO
 class H_Arm:...
-
 class Strut:...
-
 class Trailing_Arm:...
 
 
