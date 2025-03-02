@@ -44,3 +44,5 @@ print(diff.dot(diff))
 #difference between initial guess 2 & its final answer
 diff = x_0_hy2.x-x_0_lm2.x
 print(diff.dot(diff))
+
+

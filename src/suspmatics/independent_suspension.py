@@ -141,7 +141,7 @@ class Kinematic_Model:
                 #At anything other than driving val index, insert var
                 full_vars[i] = next(vars_iter)
 
-    def initial_guess(self, driving_vals, conv_tol = 0.1):#fixed vals is a tuple of lists ([indexes], [values]) 
+    def initial_guess(self, driving_vals: tuple[Iterable[int], Iterable[Number]], conv_tol = 0.1):#fixed vals is a tuple of lists ([indexes], [values]) 
        
         def function(vars):
             return self.full_sys_of_eq(vars, driving_vals)
@@ -156,7 +156,76 @@ class Kinematic_Model:
 
         #print(guess)
 
-        return sp.optimize.root(function, guess, jac=jacobian, method="lm") 
+        return sp.optimize.root(function, guess, jac=jacobian, method="lm")
+
+    #TODO write test for this
+    #This finds the index of the item of the list closest to the value
+    def _modified_interpolation_sort(value, sorted_list: Iterable) -> int:
+        low = 0
+        high = len(range) - 1
+        while low <= high and value >= sorted_list[low] and value <= sorted_list[high]:
+            pos = low + ((high - low) // (sorted_list[high] - sorted_list[low])) * (value - sorted_list[low]) #Liner interpolation to find approximate pos
+            #checks to see if value is just below pos
+            if value < sorted_list[pos]:
+                if value > sorted_list[pos-1]:
+                    return pos
+                high = pos - 1
+            
+            #checks to see if value is just above pos
+            elif value > sorted_list[pos]:
+                if value < sorted_list[pos+1]:
+                    return pos
+                low = pos + 1
+            
+            #only true if value=sorted_list[pos]
+            else:
+                return pos
+
+    
+    def create_table(self, initial_values: tuple[Iterable[int], Iterable[Number]], driving_var_index: int, range: Iterable[Number]) -> np.ndarray:
+        guess = self.initial_guess(initial_values).x
+
+        def solve_f_var(driving_value, guess):
+            def function(vars, arg):
+                return self.full_sys_of_eq(vars, (driving_var_index, arg))
+            
+            def jacobian(vars):
+                return self.jacobian(vars, driving_var_index)
+            
+            return sp.optimize.root(function, guess, args=driving_value, fprime=jacobian) 
+
+        initial_solution = solve_f_var(guess[driving_var_index], guess)
+        starting_index = self._modified_interpolation_sort(guess[driving_var_index], range)
+
+        solutions = np.zeros([len(range),len(initial_solution)])
+
+        #solves everything above starting index
+        upper_range = range[starting_index:]
+        upper_solutions = solutions[starting_index:]
+        guess = initial_solution
+        for i, driving_value in enumerate(upper_range):
+            upper_solutions[i] = solve_f_var(driving_value, guess)
+            guess = upper_solutions[i]
+
+        #solves everything below starting index
+        lower_range = range[:starting_index][::-1]
+        lower_solutions = solutions[:starting_index][::-1]
+        guess = initial_solution
+        for i, driving_value in enumerate(lower_range):
+            lower_solutions[i] = solve_f_var(driving_value, guess)
+            guess = lower_solutions[i]
+
+        return solutions
+
+
+
+
+
+
+        
+        
+
+
 
     def render(self, vars):
         self.wheel_carrier.update_vp_position(vars[0:6])
