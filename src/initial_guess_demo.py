@@ -1,8 +1,8 @@
 #import importlib
-from .suspmatics.independent_suspension import Kinematic_Model
+from suspmatics.independent_suspension import Kinematic_Model
 import scipy as sp
 import numpy as np
-
+from matplotlib import pyplot as plt
 
 link_lengths = np.array([296.3, 326.8, 377.4, 285.0, 526.2])
 frame_pickups = np.array([[70.3, 422.1, -68.1],
@@ -45,4 +45,8 @@ print(diff.dot(diff))
 diff = x_0_hy2.x-x_0_lm2.x
 print(diff.dot(diff))
 
+table = fl.create_table(([0,1,2,3,4,5], [0,800,0,0,0,0]), 2, np.linspace(-100, 100))
+
+
+plt.plot(table[2], table[6])
 

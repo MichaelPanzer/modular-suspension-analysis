@@ -5,7 +5,28 @@ from scipy.linalg import block_diag
 from scipy.linalg import lu
 from collections.abc import Iterable
 
-
+#figure out how to give value a generic type
+def modified_interpolation_search(value, sorted_list: Iterable) -> int:
+    low = 0
+    high = len(sorted_list) - 1
+    while low <= high and value >= sorted_list[low] and value <= sorted_list[high]:
+        pos = int(low + ((high - low) // (sorted_list[high] - sorted_list[low])) * (value - sorted_list[low])) #Linear interpolation to find approximate pos
+        #checks to see if value is just below pos
+        if value < sorted_list[pos]:
+            if value > sorted_list[pos-1]:
+                return pos
+            high = pos - 1
+        
+        #checks to see if value is just above pos
+        elif value > sorted_list[pos]:
+            if value < sorted_list[pos+1]:
+                return pos
+            low = pos + 1
+        
+        #only true if value=sorted_list[pos]
+        else:
+            return pos
+    
 class Kinematic_Model:
  
     def __init__(self, linkages: Iterable[Linkage], wheel_carrier: Wheel_Carrier):
@@ -78,7 +99,7 @@ class Kinematic_Model:
 
         return x
     
-    def full_sys_of_eq(self, vars, driving_vals):
+    def full_sys_of_eq(self, vars, driving_vals: Iterable):
         """
         driving vals is a tuple of lists ([indexes], [values])
         """
@@ -160,58 +181,37 @@ class Kinematic_Model:
 
     #TODO write test for this
     #This finds the index of the item of the list closest to the value
-    def _modified_interpolation_sort(value, sorted_list: Iterable) -> int:
-        low = 0
-        high = len(range) - 1
-        while low <= high and value >= sorted_list[low] and value <= sorted_list[high]:
-            pos = low + ((high - low) // (sorted_list[high] - sorted_list[low])) * (value - sorted_list[low]) #Liner interpolation to find approximate pos
-            #checks to see if value is just below pos
-            if value < sorted_list[pos]:
-                if value > sorted_list[pos-1]:
-                    return pos
-                high = pos - 1
-            
-            #checks to see if value is just above pos
-            elif value > sorted_list[pos]:
-                if value < sorted_list[pos+1]:
-                    return pos
-                low = pos + 1
-            
-            #only true if value=sorted_list[pos]
-            else:
-                return pos
 
-    
-    def create_table(self, initial_values: tuple[Iterable[int], Iterable[Number]], driving_var_index: int, range: Iterable[Number]) -> np.ndarray:
+    def create_table(self, initial_values: tuple[Iterable[int], Iterable[Number]], driving_var_index: int, driving_var_range: Iterable[Number]) -> np.ndarray:
         guess = self.initial_guess(initial_values).x
 
         def solve_f_var(driving_value, guess):
-            def function(vars, arg):
-                return self.full_sys_of_eq(vars, (driving_var_index, arg))
+            def function(vars):
+                return self.full_sys_of_eq(vars, ([driving_var_index], [driving_value]))
             
             def jacobian(vars):
-                return self.jacobian(vars, driving_var_index)
+                return self.jacobian(vars, [driving_var_index])
             
-            return sp.optimize.root(function, guess, args=driving_value, fprime=jacobian) 
+            return sp.optimize.root(function, guess, jac=jacobian, method = 'hybr').x
 
         initial_solution = solve_f_var(guess[driving_var_index], guess)
-        starting_index = self._modified_interpolation_sort(guess[driving_var_index], range)
+        starting_index = modified_interpolation_search(initial_solution[driving_var_index], driving_var_range)
 
-        solutions = np.zeros([len(range),len(initial_solution)])
+        solutions = np.zeros([len(driving_var_range),len(initial_solution)])
 
         #solves everything above starting index
-        upper_range = range[starting_index:]
+        upper_driving_var_range = driving_var_range[starting_index:]
         upper_solutions = solutions[starting_index:]
         guess = initial_solution
-        for i, driving_value in enumerate(upper_range):
+        for i, driving_value in enumerate(upper_driving_var_range):
             upper_solutions[i] = solve_f_var(driving_value, guess)
             guess = upper_solutions[i]
 
         #solves everything below starting index
-        lower_range = range[:starting_index][::-1]
+        lower_driving_var_range = driving_var_range[:starting_index][::-1]
         lower_solutions = solutions[:starting_index][::-1]
         guess = initial_solution
-        for i, driving_value in enumerate(lower_range):
+        for i, driving_value in enumerate(lower_driving_var_range):
             lower_solutions[i] = solve_f_var(driving_value, guess)
             guess = lower_solutions[i]
 
