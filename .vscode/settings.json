@@ -5,6 +5,7 @@
         "dgamma",
         "dphi",
         "dtheta",
+        "hybr",
         "jacobians",
         "nonlin",
         "pytest",

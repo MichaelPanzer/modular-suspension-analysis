@@ -6,7 +6,7 @@ from scipy.linalg import lu
 from collections.abc import Iterable
 
 #figure out how to give value a generic type
-def modified_interpolation_search(value, sorted_list: Iterable) -> int:
+def modified_interpolation_search[T](value: type[T], sorted_list: list[type[T]]) -> int:
     low = 0
     high = len(sorted_list) - 1
     while low <= high and value >= sorted_list[low] and value <= sorted_list[high]:
@@ -23,9 +23,9 @@ def modified_interpolation_search(value, sorted_list: Iterable) -> int:
                 return pos
             low = pos + 1
         
-        #only true if value=sorted_list[pos]
-        else:
-            return pos
+
+    return pos
+
     
 class Kinematic_Model:
  
@@ -34,7 +34,7 @@ class Kinematic_Model:
         self.wheel_carrier = wheel_carrier
 
         #self.components = np.array([self.wheel_carrier: Component] + self.linkages: Iterable[Component])
-        self.components = np.concatenate(([self.wheel_carrier], self.linkages))
+        self.components: np.array[Component] = np.concatenate(([self.wheel_carrier], self.linkages))
         self.input_count = sum(comp.input_count for comp in self.components)
 
 
@@ -47,7 +47,7 @@ class Kinematic_Model:
         pass
 
     @classmethod
-    def five_link(self, frame_pickups, link_lengths, upright_pickups):
+    def five_link(self, frame_pickups: Iterable[list[Number]], link_lengths: list[Number], upright_pickups: Iterable[list[Number]]):
         linkages = np.zeros(5, dtype=Linkage)
 
         for i, (pickup, length) in enumerate(zip(frame_pickups, link_lengths)):
@@ -57,7 +57,7 @@ class Kinematic_Model:
 
         return Kinematic_Model(linkages, upright)
     
-    def _global_A_matrix(self):
+    def _global_A_matrix(self) -> np.ndarray[float]:
         wheelcarrier_local_A = self.wheel_carrier.local_A_matrix()
         link_local_A = np.zeros(self.linkages.size, dtype=np.ndarray)
 
@@ -72,7 +72,7 @@ class Kinematic_Model:
         
         return A_matrix
     
-    def _global_B_vector(self):
+    def _global_B_vector(self) -> np.ndarray[float]:
         B_vector = np.zeros(self.linkages.size, dtype=np.ndarray)
 
         for i, linkage in enumerate(self.linkages):
@@ -181,7 +181,6 @@ class Kinematic_Model:
 
     #TODO write test for this
     #This finds the index of the item of the list closest to the value
-
     def create_table(self, initial_values: tuple[Iterable[int], Iterable[Number]], driving_var_index: int, driving_var_range: Iterable[Number]) -> np.ndarray:
         guess = self.initial_guess(initial_values).x
 

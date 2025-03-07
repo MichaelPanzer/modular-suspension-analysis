@@ -48,5 +48,10 @@ print(diff.dot(diff))
 table = fl.create_table(([0,1,2,3,4,5], [0,800,0,0,0,0]), 2, np.linspace(-100, 100))
 
 
-plt.plot(table[2], table[6])
+plt.plot(table[:,2], table[:,4])#z, camber
+plt.plot(table[:,2], table[:,3])#z, caster
+plt.plot(table[:,2], table[:,5])#z, toe
 
+
+
+plt.show()

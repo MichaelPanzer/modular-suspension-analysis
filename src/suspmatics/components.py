@@ -5,6 +5,7 @@ from scipy.linalg import block_diag
 from scipy.spatial.transform import Rotation as R
 import vpython
 from collections.abc import Iterable
+import numpy.typing as npt
 from numbers import Number
 
 """
@@ -47,7 +48,7 @@ class Component(ABC):
     def input_names(self) -> Iterable[str]:
         pass
 
-    def __init__(self, datum_vars: Iterable[Number]):
+    def __init__(self, datum_vars: npt.ArrayLike[Number]):
         self.datum_vars = datum_vars
 
 
@@ -56,29 +57,30 @@ class Component(ABC):
         pass
 
     @abstractmethod
-    def nonlin_x_expression(self, vars: Iterable[Number]) -> np.ndarray:
+    def nonlin_x_expression(self, vars: npt.ArrayLike[Number]) -> np.ndarray:
         pass
 
     @abstractmethod
-    def jacobian(self, vars: Iterable[Number]) -> np.ndarray:
+    def jacobian(self, vars: npt.ArrayLike[Number]) -> np.ndarray:
         pass
 
     @abstractmethod
-    def create_vp_object() -> vpython.compound:
+    def create_vp_object(self) -> vpython.compound:
         pass
 
     @abstractmethod
-    def update_vp_position() -> vpython.compound:
+    def update_vp_position(self) -> vpython.compound:
         pass
+
 class Linkage(Component):   
-    def __init__(self, datum_vars):
+    def __init__(self, datum_vars: npt.ArrayLike[Number]):
         super().__init__(datum_vars)
 
     @abstractmethod
     def local_B_vector(self) -> np.ndarray:
         pass
 class Wheel_Carrier(Component): 
-    def __init__(self, datum_vars):
+    def __init__(self, datum_vars: npt.ArrayLike[Number]):
         super().__init__(datum_vars)
 
     pass
@@ -88,18 +90,18 @@ class Wheel_Carrier(Component):
     Single_Link models a rigid tension/compression link with unbounded ball joints at either end 
 """
 class Single_Link(Linkage):
-    input_count = 2
-    linear_input_count = 3
-    output_count = 3
-    input_names = ["alpha", "beta"]
+    input_count: int = 2
+    linear_input_count: int = 3
+    output_count: int = 3
+    input_names: list[str] = ["alpha", "beta"]
 
-    def __init__(self, frame_pickup: Iterable[Number], length: Number, datum_vars=[np.pi/2, 0]):
+    def __init__(self, frame_pickup: npt.ArrayLike[Number], length: Number, datum_vars: npt.ArrayLike[Number]=[np.pi/2, 0]):
         super().__init__(datum_vars)
         self.frame_pickup = frame_pickup
         self.length = length
 
     @override
-    def local_A_matrix(self):
+    def local_A_matrix(self) -> npt.NDArray:
         return -1*self.length*np.identity(3)
     
     @override
@@ -221,7 +223,8 @@ class Upright(Wheel_Carrier):
     linear_input_count = 12
     input_names = ["x", "y", "z", "theta", "phi", "gamma"]
     #output_count = 15#TODO update this BS
-    def __init__(self, pickups: Iterable[Iterable[Number]], datum_vars=[0.,0.,0.,0.,0.,0.]):
+    
+    def __init__(self, pickups: npt.ArrayLike[Number], datum_vars: npt.ArrayLike[Number]=[0.,0.,0.,0.,0.,0.]):
         super().__init__(datum_vars)
         self.pickup_count = pickups.shape[0]
         self.pickups = pickups
@@ -236,7 +239,7 @@ class Upright(Wheel_Carrier):
         #TODO A_pickups generation code can definitely be improved
         A_wheel = np.block([[np.identity(3)]]*self.pickup_count)
 
-        A_pickups = np.zeros(shape=self.pickups.shape, dtype= np.ndarray)
+        A_pickups: np.ndarray = np.zeros(shape=self.pickups.shape, dtype= np.ndarray)
 
         for i, pickup in enumerate(self.pickups):
             for j, pickup_coord in enumerate(pickup):

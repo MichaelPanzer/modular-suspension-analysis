@@ -23,4 +23,8 @@ classifiers = [
 addopts = [
     "--import-mode=importlib",
 ]
+
+[tool.mypy]
+strict = true
+
 pythonpath = "src"
