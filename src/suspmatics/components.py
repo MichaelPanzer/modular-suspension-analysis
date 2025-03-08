@@ -73,7 +73,7 @@ class Component(ABC):
         pass
 
     @abstractmethod
-    def update_vp_position(self, vars: array32) -> vpython.compound:
+    def update_vp_position(self, vp_object: vpython.compound, vars: array32) -> vpython.compound:
         pass
 
 class Linkage(Component):   
@@ -161,26 +161,26 @@ class A_Arm(Linkage):
     input_names = ["alpha"]
     
     def __init__(self, frame_pickup_0: array32, frame_pickup_1: array32, ball_joint_pos: array32):
-        self.frame_pickup_0 = frame_pickup_0
-        self.frame_pickup_1 = frame_pickup_1
+        self.frame_pickup_0: array32 = frame_pickup_0
+        self.frame_pickup_1: array32 = frame_pickup_1
 
-        self.ball_joint_pos = ball_joint_pos
+        self.ball_joint_pos: array32 = ball_joint_pos
 
-        pickup_1_to_0 = frame_pickup_0-frame_pickup_1
-        rotation_axis_unit_vector = np.atleast_2d(pickup_1_to_0 / np.linalg.norm(pickup_1_to_0))
+        pickup_1_to_0: array32 = frame_pickup_0-frame_pickup_1
+        rotation_axis_unit_vector: array32 = np.atleast_2d(pickup_1_to_0 / np.linalg.norm(pickup_1_to_0))
 
         #saves pivot axis as unit vector
-        pivot = frame_pickup_0 - frame_pickup_1
-        self.pivot_axis = pivot / np.linalg.norm(pivot)
+        pivot: array32 = frame_pickup_0 - frame_pickup_1
+        self.pivot_axis: array32 = pivot / np.linalg.norm(pivot)
 
         #https://en.wikipedia.org/wiki/Rotation_matrix
-        self.cross_product_matrix = np.array([[                            0, -rotation_axis_unit_vector[0,2], rotation_axis_unit_vector[0,1] ],
+        self.cross_product_matrix: array32 = np.array([[                            0, -rotation_axis_unit_vector[0,2], rotation_axis_unit_vector[0,1] ],
                                               [ rotation_axis_unit_vector[0,2],                             0, -rotation_axis_unit_vector[0,0]],
                                               [-rotation_axis_unit_vector[0,1],  rotation_axis_unit_vector[0,0],                             0]])
-        self.outer_product_matrix = np.dot(rotation_axis_unit_vector.T, rotation_axis_unit_vector)
+        self.outer_product_matrix: array32 = np.dot(rotation_axis_unit_vector.T, rotation_axis_unit_vector)
 
         #this is the point on the pivot axis where the ball joint position vector is orthogonal to axis
-        self.orthogonal_link_position = np.dot(self.outer_product_matrix, np.atleast_2d(self.ball_joint_pos).T)
+        self.orthogonal_link_position: array32 = np.dot(self.outer_product_matrix, np.atleast_2d(self.ball_joint_pos).T)
 
     @override
     def local_A_matrix(self) -> array32:
@@ -207,15 +207,15 @@ class A_Arm(Linkage):
     
     #TODO implement
     @override
-    def create_vp_object(self) -> array32:
-        return np.array([0])
-
-
+    def create_vp_object(self) -> vpython.compound:
+        ...
+    #TODO implement
     @override
-    def update_vp_position(self) -> array32:
+    def update_vp_position(self, vp_object: vpython.compound, vars: array32) -> vpython.compound:
         ...
 
-#TODO
+        
+#TODO implement
 class H_Arm:...
 class Strut:...
 class Trailing_Arm:...
@@ -230,7 +230,7 @@ class Upright(Wheel_Carrier):
     input_names: list[str] = ["x", "y", "z", "theta", "phi", "gamma"]
     #output_count = 15#TODO update this BS
     
-    def __init__(self, pickups: array32, datum_vars: array32=[0.,0.,0.,0.,0.,0.]):
+    def __init__(self, pickups: array32, datum_vars: array32=np.array([0.,0.,0.,0.,0.,0.])):
         super().__init__(datum_vars)
         self.pickup_count: int = pickups.shape[0]
         self.pickups = pickups
@@ -245,7 +245,7 @@ class Upright(Wheel_Carrier):
         #TODO A_pickups generation code can definitely be improved
         A_wheel = np.block([[np.identity(3)]]*self.pickup_count)
 
-        A_pickups: np.ndarray = np.zeros(shape=self.pickups.shape, dtype= np.ndarray)
+        A_pickups: array32 = np.zeros(shape=self.pickups.shape, dtype= np.ndarray)
 
         for i, pickup in enumerate(self.pickups):
             for j, pickup_coord in enumerate(pickup):
@@ -256,13 +256,13 @@ class Upright(Wheel_Carrier):
         return np.block([A_wheel, A_pickups])
     
     @override
-    def nonlin_x_expression(self, vars) -> array32:
+    def nonlin_x_expression(self, vars: array32) -> array32:
         wheel_x, wheel_y, wheel_z, theta, phi, gamma = vars
          
         return np.concatenate([[wheel_x, wheel_y, wheel_z], R.from_euler('XYZ', [theta, phi, gamma]).as_matrix().T.flatten()])
     
     @override
-    def jacobian(self, vars) -> array32:
+    def jacobian(self, vars: array32) -> array32:
         wheel_x, wheel_y, wheel_z, theta, phi, gamma = vars
 
         wheel_jac = np.identity(3)
@@ -296,11 +296,10 @@ class Upright(Wheel_Carrier):
         dr_dphi = (r_x.dot(r_y_prime).dot(r_z)).T.flatten()
         dr_dgamma = (r_x.dot(r_y).dot(r_z_prime)).T.flatten()
         
-
-        return block_diag(wheel_jac, [dr_dtheta, dr_dphi, dr_dgamma])
+        return array32(block_diag(wheel_jac, [dr_dtheta, dr_dphi, dr_dgamma]))
 
     @override
-    def create_vp_object(self, diameter=15, axis_len=40, color=vpython.color.cyan) -> array32:
+    def create_vp_object(self, diameter: numeric=15, axis_len: numeric=40, color: vpython.color=vpython.color.cyan) -> vpython.compound:
         output = np.zeros(3+2*self.pickup_count, dtype=vpython.standardAttributes)
         r = diameter/2
 
