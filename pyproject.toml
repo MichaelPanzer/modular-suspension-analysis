@@ -5,6 +5,12 @@ build-backend = "hatchling.build_meta"
 [project]
 name = "suspmatics"
 version = "0.0.1"
+dependencies = [
+  "numpy>=2.1.3",
+  "scipy>=1.14.1",
+  "vpython>=7.6.5"
+
+]
 authors = [
   { name="Michael Panzer", email="michaelpanzer04@gmail.com" },
 ]
@@ -23,8 +29,9 @@ classifiers = [
 addopts = [
     "--import-mode=importlib",
 ]
+pythonpath = "src"
+
 
 [tool.mypy]
 strict = true
 
-pythonpath = "src"
