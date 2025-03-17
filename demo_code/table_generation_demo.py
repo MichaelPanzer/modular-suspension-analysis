@@ -1,8 +1,9 @@
 #import importlib
-from suspmatics.independent_suspension import Kinematic_Model
+from suspmatics.independent_suspension import Kinematic_Model# type: ignore
+from suspmatics.visuals import Renderer
 import scipy as sp# type: ignore
 import numpy as np
-from matplotlib import pyplot as plt
+from matplotlib import pyplot as plt# type: ignore
 
 #These dimensions roughly represent the rear suspension of an NC Miata
 link_lengths = np.array([296.3, 326.8, 377.4, 285.0, 526.2])
@@ -32,3 +33,10 @@ plt.plot(table[:,2], table[:,3])#z, caster
 plt.plot(table[:,2], table[:,5])#z, toe
 
 plt.show()
+
+
+
+r = Renderer(fl.components)
+
+r.sae_basis_vectors()
+r.animate(table)
