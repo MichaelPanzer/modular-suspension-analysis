@@ -2,9 +2,9 @@ import numpy as np
 import numpy.typing as npt
 import typing
 import numpy.typing as npt
-import scipy as sp
+import scipy as sp# type: ignore
 from suspmatics.components import *
-from scipy.linalg import block_diag
+from scipy.linalg import block_diag# type: ignore
 from collections.abc import Iterable
 import itertools
 
@@ -179,7 +179,7 @@ class Kinematic_Model:
         initial_solution = solve_f_var(guess[driving_var_index], guess)
         starting_index = modified_interpolation_search(initial_solution[driving_var_index], driving_var_range)
 
-        solutions: array32 = np.zeros([len(driving_var_range),len(initial_solution)])
+        solutions: array32 = np.zeros([len(driving_var_range),len(initial_solution)], dtype=np.float32)
 
         #Solves everything above starting index
         upper_driving_var_range = driving_var_range[starting_index:]

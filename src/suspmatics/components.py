@@ -2,9 +2,9 @@ from abc import ABC, abstractmethod
 from typing import override
 import typing
 import numpy as np
-from scipy.linalg import block_diag
-from scipy.spatial.transform import Rotation as R
-import vpython
+from scipy.linalg import block_diag# type: ignore
+from scipy.spatial.transform import Rotation as R# type: ignore
+import vpython# type: ignore
 from collections.abc import Iterable
 import numpy.typing as npt
 

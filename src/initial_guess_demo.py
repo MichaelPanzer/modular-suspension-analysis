@@ -1,6 +1,6 @@
 #import importlib
 from suspmatics.independent_suspension import Kinematic_Model
-import scipy as sp
+import scipy as sp# type: ignore
 import numpy as np
 from matplotlib import pyplot as plt
 
@@ -17,7 +17,7 @@ upright_pickups = np.array([[-61.9, -105.5, -82.1],
                           [-79.6, -85.7, 141.9]])
 
 fl = Kinematic_Model.five_link(frame_pickups, link_lengths, upright_pickups)
-
+"""
 #solves suspension kinematics system of equations in terms of z
 def solve_system(driving_args, guess, kinematic_model, method='hybr'): #driving args is tuple of lists
     
@@ -44,8 +44,8 @@ print(diff.dot(diff))
 #difference between initial guess 2 & its final answer
 diff = x_0_hy2.x-x_0_lm2.x
 print(diff.dot(diff))
-
-table = fl.create_table(([0,1,2,3,4,5], [0,800,0,0,0,0]), 2, np.linspace(-100, 100))
+"""
+table = fl.create_table([(0,0), (1,800), (2,0), (3,0), (4,0), (5,0)], 2, np.linspace(-100, 100))
 
 
 plt.plot(table[:,2], table[:,4])#z, camber
