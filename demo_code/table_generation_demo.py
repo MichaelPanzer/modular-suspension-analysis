@@ -18,34 +18,7 @@ upright_pickups = np.array([[-61.9, -105.5, -82.1],
                           [-79.6, -85.7, 141.9]])
 
 fl = Kinematic_Model.five_link(frame_pickups, link_lengths, upright_pickups)
-"""
-#solves suspension kinematics system of equations in terms of z
-def solve_system(driving_args, guess, kinematic_model, method='hybr'): #driving args is tuple of lists
-    
-    def function(vars):
-        return kinematic_model.full_sys_of_eq(vars, driving_args)
-    
-    def jacobian(vars):
-        return kinematic_model.jacobian(vars, driving_args[0])
 
-    return sp.optimize.root(function, guess,jac=jacobian, method=method) 
-
-
-x_0_lm1 = solve_system(([0,1,2,3,4,5], [0,800,0,0,0,0]), [0,800,0,0,0,0,np.pi/2,0,np.pi/2,0,np.pi/2,0,np.pi/2,0,np.pi/2,0], fl, method='lm')
-x_0_lm2 = fl.initial_guess(([0,1,2,3,4,5], [0,800,0,0,0,0]))
-
-x_0_hy1 = solve_system(([2,], [0,]), x_0_lm1.x, fl, method='hybr')
-x_0_hy2 = solve_system(([2,], [0,]), x_0_lm2.x, fl, method='hybr')
-
-#difference between two initial guesses
-diff = x_0_lm1.x-x_0_lm2.x
-print(diff.dot(diff))
-
-
-#difference between initial guess 2 & its final answer
-diff = x_0_hy2.x-x_0_lm2.x
-print(diff.dot(diff))
-"""
 
 initial_pos = [(0,0.), (1,800), (2,0), (3,0), (4,0), (5,0)] #these are the positions used to create the initial guess
 driving_var = 2 #index of z variable

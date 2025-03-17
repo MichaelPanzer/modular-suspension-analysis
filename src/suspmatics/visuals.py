@@ -1,8 +1,8 @@
 #TODO create 3d rendering
-from vpython import *
+
 
 class Suspension_Renderer:
-    def __init__(self, components):
+    def __init__(self, components: list[components]):
         self.components = components
 
     def render():
