@@ -4,6 +4,7 @@ from suspmatics.independent_suspension import *
 from jacobi import jacobi
 
 np.set_printoptions(precision=1, suppress=True, linewidth=150)
+array32 = npt.NDArray[np.float32]
 
 frame_pickups = np.array([[31,32,33],
                                 [34,35,36],
