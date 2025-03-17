@@ -296,7 +296,7 @@ class Upright(Wheel_Carrier):
         dr_dphi = (r_x.dot(r_y_prime).dot(r_z)).T.flatten()
         dr_dgamma = (r_x.dot(r_y).dot(r_z_prime)).T.flatten()
         
-        return array32(block_diag(wheel_jac, [dr_dtheta, dr_dphi, dr_dgamma]))
+        return np.array(block_diag(wheel_jac, [dr_dtheta, dr_dphi, dr_dgamma]))
 
     @override
     def create_vp_object(self, diameter: numeric=15, axis_len: numeric=40, color: vpython.color=vpython.color.cyan) -> vpython.compound:

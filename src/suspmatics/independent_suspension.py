@@ -66,7 +66,7 @@ class Kinematic_Model:
         links_local_A: list[array32] = [linkage.local_A_matrix() for linkage in self.linkages]
 
         #TODO refactor with array slices to limit data copying
-        A_links = block_diag(links_local_A)
+        A_links = block_diag(*links_local_A)
         A_matrix = np.block([wheelcarrier_local_A, A_links])
         
         return A_matrix
@@ -153,7 +153,7 @@ class Kinematic_Model:
             return self.full_sys_of_eq(vars, driving_vals), self.jacobian(vars, driving_vals)
 
 
-        guess: array32 = np.concatenate([comp.datum_vars for comp in self.components], dtype=array32)
+        guess: array32 = np.concatenate([comp.datum_vars for comp in self.components])
         for (index, value) in driving_vals:
             guess[index] = value
 
