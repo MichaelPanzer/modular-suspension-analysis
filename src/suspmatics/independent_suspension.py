@@ -54,11 +54,11 @@ class Kinematic_Model:
         return NotImplementedError # type: ignore
 
     @classmethod
-    def five_link(self, frame_pickups: array32, link_lengths: array32, upright_pickups: array32) -> typing.Self:
+    def five_link(cls, frame_pickups: array32, link_lengths: array32, upright_pickups: array32) -> typing.Self:
         linkages: list[Linkage] = [Single_Link(pickup, length) for (pickup, length) in zip(frame_pickups, link_lengths)]
         upright = Upright(upright_pickups)
 
-        return self(linkages, upright)
+        return cls(linkages, upright)
     
     #generates the matrix of coefficients to the linearized system of eqs
     def _global_A_matrix(self) -> array32:

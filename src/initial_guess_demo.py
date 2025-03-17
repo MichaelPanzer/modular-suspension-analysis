@@ -4,6 +4,7 @@ import scipy as sp# type: ignore
 import numpy as np
 from matplotlib import pyplot as plt
 
+#These dimensions roughly represent the rear suspension of an NC Miata
 link_lengths = np.array([296.3, 326.8, 377.4, 285.0, 526.2])
 frame_pickups = np.array([[70.3, 422.1, -68.1],
                           [110.2, 352.8, 98.8],
@@ -45,13 +46,16 @@ print(diff.dot(diff))
 diff = x_0_hy2.x-x_0_lm2.x
 print(diff.dot(diff))
 """
-table = fl.create_table([(0,0), (1,800), (2,0), (3,0), (4,0), (5,0)], 2, np.linspace(-100, 100))
+
+initial_pos = [(0,0.), (1,800), (2,0), (3,0), (4,0), (5,0)] #these are the positions used to create the initial guess
+driving_var = 2 #index of z variable
+driving_values = np.linspace(-100, 100) #list of z values used to create the table
+
+table = fl.create_table(initial_pos, driving_var, driving_values)
 
 
 plt.plot(table[:,2], table[:,4])#z, camber
 plt.plot(table[:,2], table[:,3])#z, caster
 plt.plot(table[:,2], table[:,5])#z, toe
-
-
 
 plt.show()
