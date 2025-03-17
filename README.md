@@ -14,14 +14,14 @@ There are various existing tools for analyzing vehicle suspension, however these
 <ins>Todo List</ins>
 - [x] Fix indexing in kinematic_model class so that it can work with various types of links
 - [x] Use least squares method to improve initial guesses for numerical analysis
+- [x] Add type annotations to existing code
 - [ ] Improve test coverage of the suspension components
 - [ ] Refactor matrix generation to reduce copying of arrays
 - [ ] Create auxiliary pickups for push rods, sway bars, coilovers, etc.
-- [ ] Figure out why the jacobian test is failing
 - [ ] Add ability to import and save as csv file
 - [ ] Add methods for A-arm and H-arm suspension components
 - [ ] Add curve fitting algorithms to optimize suspension geometry
-- [ ] Add type annotations to existing code
+
 
 
 
