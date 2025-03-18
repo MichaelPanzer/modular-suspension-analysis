@@ -1,3 +1,4 @@
+# type: ignore #TODO this probably isn't good
 import importlib
 import numpy as np
 from suspmatics.components import *
@@ -12,7 +13,7 @@ def test_A_arm_rotation_length_doesnt_change():
 
     a_arm = A_Arm(np.array([0,0,0]), np.array([p1x, p1y, p1z]), outer_ball_joint)
 
-    rotation_mat = a_arm.local_A_matrix()
+    rotation_mat = a_arm.local_coef_mat()
 
     
     cos, sin = np.cos(2), np.sin(2)
@@ -27,7 +28,7 @@ def test_Single_Link_length_doesnt_change():
     alpha = 0.5
     beta = 4
 
-    local_A_mat = link.local_A_matrix()
+    local_A_mat = link.local_coef_mat()
 
     nonlin_vector = link.nonlin_x_expression((alpha,beta))
 
@@ -43,7 +44,7 @@ def test_Upright_lengths_dont_change():
     phi = 1
     gamma = 1.5
 
-    local_A = upright.local_A_matrix()
+    local_A = upright.local_coef_mat()
 
     x = upright.nonlin_x_expression((0,0,0, theta, phi, gamma))
 

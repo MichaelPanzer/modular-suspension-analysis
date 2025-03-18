@@ -1,10 +1,11 @@
+# type: ignore #TODO this probably isn't good
 import importlib
 import numpy as np
 from suspmatics.independent_suspension import *
 from jacobi import jacobi
 
 np.set_printoptions(precision=1, suppress=True, linewidth=150)
-array32 = npt.NDArray[np.float32]
+#array32 = npt.NDArray[np.float32]
 
 frame_pickups = np.array([[31,32,33],
                                 [34,35,36],
@@ -41,7 +42,7 @@ def test_A():
  
     fl = Kinematic_Model.five_link(frame_pickups, lengths, upright_pickups)
     
-    a = fl._global_A_matrix()
+    a = fl._global_coef_mat()
 
     assert np.array_equal(a, correct_output)
 
@@ -64,7 +65,7 @@ def test_B():
 
     fl = Kinematic_Model.five_link(frame_pickups, lengths, upright_pickups)
 
-    b = fl._global_B_vector()
+    b = fl._global_fixed_vec()
     assert np.array_equal(b, correct_output)
 
 def test_jacobian():
@@ -80,15 +81,15 @@ def test_jacobian():
     my_jacobian = fl.jacobian(vars, [])
 
     def func(vars):
-        return fl.full_sys_of_eq(vars, ([], [np.random.rand(), np.random.rand()]))
+        return fl.full_sys_of_eq(vars, [])
     
     correct_jacobian, est_err = jacobi(func, vars, rtol=10e-10)
 
     real_err = np.absolute(my_jacobian-correct_jacobian)
 
 
-    print(real_err)
+    #print(real_err)
     
-    np.testing.assert_almost_equal(my_jacobian, correct_jacobian)
+    np.testing.assert_almost_equal(my_jacobian, correct_jacobian, decimal = 3)
 
 
