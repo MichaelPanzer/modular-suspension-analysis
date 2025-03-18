@@ -57,7 +57,7 @@ class Component(ABC):
 
 
     @abstractmethod
-    def local_A_matrix(self) -> array32:
+    def local_coef_mat(self) -> array32:
         pass
 
     @abstractmethod
@@ -81,7 +81,7 @@ class Linkage(Component):
         super().__init__(datum_vars)
 
     @abstractmethod
-    def local_B_vector(self) -> array32:
+    def local_fixed_vec(self) -> array32:
         pass
 class Wheel_Carrier(Component): 
     def __init__(self, datum_vars: array32):
@@ -105,11 +105,11 @@ class Single_Link(Linkage):
         self.length = length
 
     @override
-    def local_A_matrix(self) -> array32:
+    def local_coef_mat(self) -> array32:
         return -1.0*self.length*np.identity(3)
     
     @override
-    def local_B_vector(self) -> array32:
+    def local_fixed_vec(self) -> array32:
         return self.frame_pickup
     
     @override
@@ -183,7 +183,7 @@ class A_Arm(Linkage):
         self.orthogonal_link_position: array32 = np.dot(self.outer_product_matrix, np.atleast_2d(self.ball_joint_pos).T)
 
     @override
-    def local_A_matrix(self) -> array32:
+    def local_coef_mat(self) -> array32:
         ball_joint_column_vec = np.atleast_2d(self.ball_joint_pos).T
 
         cos_column = np.dot((np.identity(3)-self.outer_product_matrix), ball_joint_column_vec)
@@ -192,7 +192,7 @@ class A_Arm(Linkage):
         return np.block([cos_column, sin_column])
     
     @override
-    def local_B_vector(self) -> array32:
+    def local_fixed_vec(self) -> array32:
         return self.frame_pickup_0 - self.orthogonal_link_position
 
     @override
@@ -241,19 +241,11 @@ class Upright(Wheel_Carrier):
         return 3*self.pickup_count
 
     @override
-    def local_A_matrix(self) -> array32:
-        #TODO A_pickups generation code can definitely be improved
-        A_wheel = np.block([[np.identity(3)]]*self.pickup_count)
-
-        A_pickups: array32 = np.zeros(shape=self.pickups.shape, dtype= np.ndarray)
-
-        for i, pickup in enumerate(self.pickups):
-            for j, pickup_coord in enumerate(pickup):
-                A_pickups[i,j] = pickup_coord*np.identity(3)
-
-        A_pickups = np.block(A_pickups.tolist())
-
-        return np.block([A_wheel, A_pickups])
+    def local_coef_mat(self) -> array32:
+        wheel_coef_mat: array32 = np.block([[np.identity(3)]]*self.pickup_count)
+        pickup_coef_mat: array32 = np.block([[pickup_coord*np.identity(3) for pickup_coord in pickup] for pickup in self.pickups])
+        
+        return np.block([wheel_coef_mat, pickup_coef_mat])
     
     @override
     def nonlin_x_expression(self, vars: array32) -> array32:
@@ -305,7 +297,7 @@ class Upright(Wheel_Carrier):
 
         #the first 3 objects are the basis vectors for the local frame of reference
         output[0] = vpython.arrow(axis=vpython.vector(0,0,axis_len), color=vpython.color.blue)
-        output[1] = vpython.arrow(axis=vpython.vector(-axis_len,0,0), color=vpython.color.green)#wheel is axisymmetric so these mfs prolly aren't necessary
+        output[1] = vpython.arrow(axis=vpython.vector(-axis_len,0,0), color=vpython.color.green)#wheel is axisymmetric so this probably isn't necessary
         output[2] = vpython.arrow(axis=vpython.vector(0,-axis_len,0), color=vpython.color.red)
 
         #All remaining objects are for the pickup points
