@@ -6,7 +6,6 @@ import scipy as sp# type: ignore
 from suspmatics.components import * #TODO remove this import and reference with components.foo
 from suspmatics import components
 from scipy.linalg import block_diag# type: ignore
-from collections.abc import Iterable
 import itertools
 
 #numeric = typing.Union[int, float]
@@ -162,7 +161,7 @@ class Kinematic_Model:
 
     #TODO write test for this
     #TODO change return type to scipy.spatial.cKDTree
-    def create_table(self, initial_values: list[tuple[int, float]], driving_var_index: int, driving_var_range: array32) -> array32:
+    def solution_mat(self, initial_values: list[tuple[int, numeric]], driving_var_index: int, driving_var_range: array32) -> array32:
         #Init guess to start with links in correct orientation
         guess = self.initial_guess(initial_values).x
 
