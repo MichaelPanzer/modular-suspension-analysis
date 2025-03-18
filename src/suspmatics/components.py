@@ -52,8 +52,8 @@ class Component(ABC):
     def input_names(self) -> list[str]:
         pass
 
-    def __init__(self, datum_vars: array32):
-        self.datum_vars = datum_vars
+    def __init__(self, init_vars: array32):
+        self.init_vars = init_vars
 
 
     @abstractmethod
@@ -77,15 +77,15 @@ class Component(ABC):
         pass
 
 class Linkage(Component):   
-    def __init__(self, datum_vars: array32):
-        super().__init__(datum_vars)
+    def __init__(self, init_vars: array32):
+        super().__init__(init_vars)
 
     @abstractmethod
     def local_fixed_vec(self) -> array32:
         pass
 class Wheel_Carrier(Component): 
-    def __init__(self, datum_vars: array32):
-        super().__init__(datum_vars)
+    def __init__(self, init_vars: array32):
+        super().__init__(init_vars)
 
     pass
 
@@ -99,8 +99,8 @@ class Single_Link(Linkage):
     output_count = 3
     input_names = ["alpha", "beta"]
 
-    def __init__(self, frame_pickup: array32, length: numeric, datum_vars: array32=np.array([np.pi/2, 0])):
-        super().__init__(datum_vars)
+    def __init__(self, frame_pickup: array32, length: numeric, init_vars: array32=np.array([np.pi/2, 0])):
+        super().__init__(init_vars)
         self.frame_pickup: array32 = frame_pickup
         self.length = length
 
@@ -230,8 +230,8 @@ class Upright(Wheel_Carrier):
     input_names: list[str] = ["x", "y", "z", "theta", "phi", "gamma"]
     #output_count = 15#TODO update this BS
     
-    def __init__(self, pickups: array32, datum_vars: array32=np.array([0.,0.,0.,0.,0.,0.])):
-        super().__init__(datum_vars)
+    def __init__(self, pickups: array32, init_vars: array32=np.array([0.,0.,0.,0.,0.,0.])):
+        super().__init__(init_vars)
         self.pickup_count: int = pickups.shape[0]
         self.pickups = pickups
 

@@ -153,7 +153,7 @@ class Kinematic_Model:
             return self.full_sys_of_eq(vars, driving_vals), self.jacobian(vars, driving_vals)
 
 
-        guess: array32 = np.concatenate([comp.datum_vars for comp in self.components])
+        guess: array32 = np.concatenate([comp.init_vars for comp in self.components])
         for (index, value) in driving_vals:
             guess[index] = value
 
