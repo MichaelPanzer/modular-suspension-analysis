@@ -54,6 +54,8 @@ def ver_c(vec: np.ndarray, angles: tuple):
     r = Rotation.from_euler("XYZ", angles).as_matrix()
     return vec.dot(r)
 
+def as_perc(datum, value):
+    return 100*(value/datum)
 
 count = 10**5
 random_inputs = np.random.rand(count, 2, 3)
@@ -88,9 +90,6 @@ end_time = time.time()
 time_c = end_time-start_time
 print("c: " + str(time_c))
 
-
-def as_perc(datum, value):
-    return 100*(value/datum)
 
 print("\n\nfull matrix as percent:")
 print(as_perc(time_a, time_a))
