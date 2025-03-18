@@ -54,7 +54,7 @@ class Kinematic_Model:
         return NotImplementedError # type: ignore
 
     @classmethod
-    def five_link(cls, frame_pickups: array32, link_lengths: array32, upright_pickups: array32) -> typing.Self:
+    def five_link(cls, frame_pickups: list[array32], link_lengths: list[np.float32], upright_pickups: list[array32]) -> typing.Self:
         linkages: list[Linkage] = [Single_Link(pickup, length) for (pickup, length) in zip(frame_pickups, link_lengths)]
         upright = Upright(upright_pickups)
 
