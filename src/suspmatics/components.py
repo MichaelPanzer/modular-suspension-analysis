@@ -9,7 +9,7 @@ from collections.abc import Iterable
 import numpy.typing as npt
 
 #custom types
-numeric = typing.Union[int, float]
+numeric = typing.Union[int, float, np.float32, np.float64]
 array32 = npt.NDArray[np.float32]
 
 """
