@@ -43,8 +43,8 @@ class Kinematic_Model:
         #this list stores the final var index of each component. To access the vars that correspond to a specific components use [input_var_indices[comp_num]-comp.input_count : input_var_indices[comp_num]]
         self.input_var_indices: list[int] = list(itertools.accumulate([c.input_count for c in self.components])) #there has to be a better way to do this
 
-        self.a_mat = self._global_A_matrix()
-        self.b_vec = self._global_B_vector()
+        self.a_mat = self._global_coef_mat()
+        self.b_vec = self._global_fixed_vec()
         
         #self.linear_system, self.frame_pickups = self.__generate_linear_system__()
 
@@ -61,22 +61,22 @@ class Kinematic_Model:
         return cls(linkages, upright)
     
     #generates the matrix of coefficients to the linearized system of eqs
-    def _global_A_matrix(self) -> array32:
-        wheelcarrier_local_A = self.wheel_carrier.local_A_matrix()
-        links_local_A: list[array32] = [linkage.local_A_matrix() for linkage in self.linkages]
+    def _global_coef_mat(self) -> array32:
+        wc_local_coef_mat = self.wheel_carrier.local_coef_mat()
+        links_local_coef_mat: list[array32] = [linkage.local_coef_mat() for linkage in self.linkages]
 
         #TODO refactor with array slices to limit data copying
-        A_links = block_diag(*links_local_A)
-        A_matrix = np.block([wheelcarrier_local_A, A_links])
+        links_local_coef_mat = block_diag(*links_local_coef_mat)
+        coef_mat = np.block([wc_local_coef_mat, links_local_coef_mat])
         
-        return A_matrix
+        return coef_mat
     
     #generates the solution to the linearized system of eqs
-    def _global_B_vector(self) -> array32:
-        B_vector = [linkage.local_B_vector() for linkage in self.linkages]
+    def _global_fixed_vec(self) -> array32:
+        fixed_vec = [linkage.local_fixed_vec() for linkage in self.linkages]
         
         #see if its possible to get rid of transpose
-        return np.atleast_2d(np.block(B_vector)).T
+        return np.atleast_2d(np.block(fixed_vec)).T
 
     #generates the input to the linear system of eqs using the non-linear input(actual spatial pos/angles of the components)
     def _generate_x_nonlinear(self, vars: array32) -> array32:
@@ -200,19 +200,6 @@ class Kinematic_Model:
         return solutions
 
 
-    """
-    def render(self, vars):
-        self.wheel_carrier.update_vp_position(vars[0:6])
-
-        link_vars = vars[6:]
-        i=0
-        for link in self.linkages:
-            link_var_count = 2
-            link.update_vp_position(link_vars[i:i+link_var_count])
-            i+=link_var_count
-        
-        return"
-    """
 
 
         
