@@ -5,7 +5,6 @@ import numpy as np
 from scipy.linalg import block_diag# type: ignore
 from scipy.spatial.transform import Rotation as R# type: ignore
 import vpython# type: ignore
-from collections.abc import Iterable
 import numpy.typing as npt
 
 #custom types
@@ -22,10 +21,10 @@ array32 = npt.NDArray[np.float32]
     y -> starboard (right)
     z -> down
 
-    vpython: TODO check ur notes stoopidface
-    x ->
-    y ->
-    z ->
+    vpython:
+    x -> port (left)
+    y -> up
+    z -> forward
 """
 vp_transf_mat = np.array([[0,-1,0], [0,0,-1], [1,0,0]]) 
 
@@ -90,10 +89,10 @@ class Wheel_Carrier(Component):
     pass
 
 
-"""
-    Single_Link models a rigid tension/compression link with unbounded ball joints at either end 
-"""
 class Single_Link(Linkage):
+    """
+    Single_Link models a rigid tension/compression link with one fixed end
+    """
     input_count = 2
     linear_input_count = 3
     output_count = 3
@@ -151,10 +150,10 @@ class Single_Link(Linkage):
         vp_object.axis = vpython.vector(*np.dot(vp_transf_mat, self.nonlin_x_expression(vars)))
         return vp_object
     
-"""
-    A_Arm models a rigid linkage with a pivot axis (two ball joints) on the inboard side and a ball joint on the outboard side
-"""
 class A_Arm(Linkage):
+    """
+    A_Arm models a rigid linkage with a fixed pivot axis (two ball joints) on the inboard side and a ball joint on the outboard side
+    """
     input_count = 1
     linear_input_count = 3
     output_count = 3
@@ -221,14 +220,14 @@ class Strut:...
 class Trailing_Arm:...
 
 
-"""
-    Upright can be used to model a wheel carrier bounded by a collection of ball joints
-"""
+
 class Upright(Wheel_Carrier):
+    """
+    Upright can be used to model a wheel carrier bounded by a collection of ball joints
+    """
     input_count: int = 6
     linear_input_count: int = 12
     input_names: list[str] = ["x", "y", "z", "theta", "phi", "gamma"]
-    #output_count = 15#TODO update this BS
     
     def __init__(self, pickups: array32, init_vars: array32=np.array([0.,0.,0.,0.,0.,0.])):
         super().__init__(init_vars)

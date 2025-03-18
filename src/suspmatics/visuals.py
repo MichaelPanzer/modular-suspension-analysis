@@ -21,13 +21,13 @@ class Renderer:
         vpython.arrow(axis=vpython.vector(0,-50,0), color=vpython.color.red)
         return
     
-    def animate(self, solution_matrix: components.array32, loops:int=5, r:int=50) -> None:
+    def animate(self, solution_matrix: components.array32, loops:int=5, rate:int=50) -> None:
         for i in range(loops):
             for pos in solution_matrix:
-                vpython.rate(r)
+                vpython.rate(rate)
                 self.render(pos)
             for pos in reversed(solution_matrix):
-                vpython.rate(r)
+                vpython.rate(rate)
                 self.render(pos)
 
         return
