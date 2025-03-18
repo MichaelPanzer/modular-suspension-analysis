@@ -106,7 +106,7 @@ class Single_Link(Linkage):
 
     @override
     def local_coef_mat(self) -> array32:
-        return -1.0*self.length*np.identity(3)
+        return np.multiply(-1.0*self.length, np.identity(3), dtype=np.float32)
     
     @override
     def local_fixed_vec(self) -> array32:
