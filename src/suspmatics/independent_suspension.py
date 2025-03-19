@@ -43,8 +43,8 @@ class Kinematic_Model:
 
         #this list stores the final var index of each component. To access the vars that correspond to a specific components use [input__indices[comp_num]-comp.input_count : input__indices[comp_num]]
         comp_input_counts = np.array([c.input_count for c in self.components])
-        end_indices = np.array(itertools.accumulate(comp_input_counts))
-        self.input_indices: list[tuple[int, int]] = list(zip())
+        end_indices = np.array(list(itertools.accumulate(comp_input_counts)))
+        self.input_indices: list[tuple[int, int]] = list(zip(end_indices-comp_input_counts, end_indices))
 
         #stores callable functions for the nonlinear terms and jacobians of each component
         self.nonlinear_functions: list[abc.Callable[[array32], array32]] = [comp.nonlin_expression() for comp in self.components]
@@ -120,6 +120,8 @@ class Kinematic_Model:
     def jacobian(self, vars: array32, driving_vals: list[tuple[int, components.numeric]]) -> array32:
         
         jacobians: list[array32] = [f(vars[index1:index2]) for (f, (index1, index2)) in zip(self.jacobian_functions, self.input_indices)]
+        print(self.input_indices)
+        
         #TODO test and delete
         """
         jacobians = np.zeros(self.linkages.shape[0] + 1, dtype=np.ndarray)
@@ -135,7 +137,8 @@ class Kinematic_Model:
         """
 
         #creates a jacobian matrix with the derivative of the driving terms =0
-        jacobian_matrix: array32 = block_diag(*jacobians)    
+        jacobian_matrix: array32 = block_diag(*jacobians) 
+
 
         #TODO find a way to remove the for loop from this
         driving_var_matrix: array32 = np.zeros((len(driving_vals),) + self.coef_mat[0].shape, dtype=np.float32)

@@ -87,7 +87,6 @@ def test_jacobian():
 
     real_err = np.absolute(my_jacobian-correct_jacobian)
 
-
     #print(real_err)
     
     np.testing.assert_almost_equal(my_jacobian, correct_jacobian, decimal = 3)
