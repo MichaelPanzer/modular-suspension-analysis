@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import override
+from collections import abc
 import typing
 import numpy as np
 from scipy.linalg import block_diag# type: ignore
@@ -60,11 +61,11 @@ class Component(ABC):
         pass
 
     @abstractmethod
-    def nonlin_x_expression(self, vars: array32) -> array32:
+    def nonlin_expression(self) -> abc.Callable[[array32], array32]:
         pass
 
     @abstractmethod
-    def jacobian(self, vars: array32) -> array32:
+    def jacobian(self) -> abc.Callable[[array32], array32]:
         pass
 
     @abstractmethod
@@ -112,16 +113,20 @@ class Single_Link(Linkage):
         return self.frame_pickup
     
     @override
-    def nonlin_x_expression(self, vars: array32) -> array32:
-        alpha, beta = vars
-        return np.array([np.cos(beta)*np.cos(alpha), np.cos(beta)*np.sin(alpha), np.sin(beta)])   
+    def nonlin_expression(self) -> abc.Callable[[array32], array32]:
+        def output(vars: array32) -> array32:
+            alpha, beta = vars
+            return np.array([np.cos(beta)*np.cos(alpha), np.cos(beta)*np.sin(alpha), np.sin(beta)])   
+        return output
     
     @override
-    def jacobian(self, vars: array32) -> array32:
-        alpha, beta = vars
-        #returns [[dx/d_alpha],[dx/d_beta]]
-        return np.array([[-np.cos(beta)*np.sin(alpha), np.cos(beta)*np.cos(alpha), 0], [-np.sin(beta)*np.cos(alpha), -np.sin(beta)*np.sin(alpha), np.cos(beta)]])   
-    
+    def jacobian(self) -> abc.Callable[[array32], array32]:
+        def output(vars: array32) -> array32:
+            alpha, beta = vars
+            #returns [[dx/d_alpha],[dx/d_beta]]
+            return np.array([[-np.cos(beta)*np.sin(alpha), np.cos(beta)*np.cos(alpha), 0], [-np.sin(beta)*np.cos(alpha), -np.sin(beta)*np.sin(alpha), np.cos(beta)]])   
+        return output
+
     @override
     def create_vp_object(self, diameter: numeric=25, color: vpython.color = vpython.color.purple) -> vpython.compound:
         x_axis = np.array([1,0,0])#All objects are generated along the +x axis in the vpython frame of reference
@@ -147,7 +152,7 @@ class Single_Link(Linkage):
 
     @override
     def update_vp_position(self, vp_object: vpython.compound, vars: array32) -> vpython.compound:
-        vp_object.axis = vpython.vector(*np.dot(vp_transf_mat, self.nonlin_x_expression(vars)))
+        vp_object.axis = vpython.vector(*np.dot(vp_transf_mat, self.nonlin_expression()(vars)))
         return vp_object
     
 class A_Arm(Linkage):
@@ -195,14 +200,18 @@ class A_Arm(Linkage):
         return self.frame_pickup_0 - self.orthogonal_link_position
 
     @override
-    def nonlin_x_expression(self, vars: array32) -> array32:
-        alpha = vars
-        return np.array([np.cos(alpha), np.sin(alpha)])
+    def nonlin_expression(self) -> abc.Callable[[array32], array32]:
+        def output(vars: array32) -> array32:
+            alpha = vars
+            return np.array([np.cos(alpha), np.sin(alpha)])
+        return output
     
     @override
-    def jacobian(self, vars: array32) -> array32:
-        alpha = vars
-        return np.array([-np.sin(alpha), np.cos(alpha)]) 
+    def jacobian(self) -> abc.Callable[[array32], array32]:
+        def output(vars: array32) -> array32:
+            alpha = vars
+            return np.array([-np.sin(alpha), np.cos(alpha)]) 
+        return output
     
     #TODO implement
     @override
@@ -247,47 +256,50 @@ class Upright(Wheel_Carrier):
         return np.block([wheel_coef_mat, pickup_coef_mat])
     
     @override
-    def nonlin_x_expression(self, vars: array32) -> array32:
-        wheel_x, wheel_y, wheel_z, theta, phi, gamma = vars
-         
-        return np.concatenate([[wheel_x, wheel_y, wheel_z], R.from_euler('XYZ', [theta, phi, gamma]).as_matrix().T.flatten()])
+    def nonlin_expression(self) -> abc.Callable[[array32], array32]:
+        def output(vars: array32) -> array32:
+            wheel_x, wheel_y, wheel_z, theta, phi, gamma = vars
+            return np.concatenate([[wheel_x, wheel_y, wheel_z], R.from_euler('XYZ', [theta, phi, gamma]).as_matrix().T.flatten()])
+        return output
     
     @override
-    def jacobian(self, vars: array32) -> array32:
-        wheel_x, wheel_y, wheel_z, theta, phi, gamma = vars
+    def jacobian(self) -> abc.Callable[[array32], array32]:
+        def output(vars: array32) -> array32:
+            wheel_x, wheel_y, wheel_z, theta, phi, gamma = vars
 
-        wheel_jac = np.identity(3)
+            wheel_jac = np.identity(3)
 
-        #TODO this whole thing can be made so much more efficient
-        r_x = np.array([[1, 0, 0],
-                        [0, np.cos(theta), -np.sin(theta)],
-                        [0, np.sin(theta), np.cos(theta)]])
+            #TODO this whole thing can be made so much more efficient
+            r_x = np.array([[1, 0, 0],
+                            [0, np.cos(theta), -np.sin(theta)],
+                            [0, np.sin(theta), np.cos(theta)]])
+            
+            r_y = np.array([[np.cos(phi), 0, np.sin(phi)],
+                            [0, 1, 0],
+                            [-np.sin(phi), 0, np.cos(phi)]])
+            
+            r_z = np.array([[np.cos(gamma), -np.sin(gamma), 0],
+                            [np.sin(gamma), np.cos(gamma), 0],
+                            [0, 0, 1]])
+            
+            r_x_prime = np.array([[0, 0, 0],
+                            [0, -np.sin(theta), -np.cos(theta)],
+                            [0, np.cos(theta), -np.sin(theta)]])
         
-        r_y = np.array([[np.cos(phi), 0, np.sin(phi)],
-                        [0, 1, 0],
-                        [-np.sin(phi), 0, np.cos(phi)]])
-        
-        r_z = np.array([[np.cos(gamma), -np.sin(gamma), 0],
-                        [np.sin(gamma), np.cos(gamma), 0],
-                        [0, 0, 1]])
-        
-        r_x_prime = np.array([[0, 0, 0],
-                        [0, -np.sin(theta), -np.cos(theta)],
-                        [0, np.cos(theta), -np.sin(theta)]])
-    
-        r_y_prime = np.array([[-np.sin(phi), 0, np.cos(phi)],
-                        [0, 0, 0],
-                        [-np.cos(phi), 0, -np.sin(phi)]])
-        
-        r_z_prime = np.array([[-np.sin(gamma), -np.cos(gamma), 0],
-                        [np.cos(gamma), -np.sin(gamma), 0],
-                        [0, 0, 0]])
+            r_y_prime = np.array([[-np.sin(phi), 0, np.cos(phi)],
+                            [0, 0, 0],
+                            [-np.cos(phi), 0, -np.sin(phi)]])
+            
+            r_z_prime = np.array([[-np.sin(gamma), -np.cos(gamma), 0],
+                            [np.cos(gamma), -np.sin(gamma), 0],
+                            [0, 0, 0]])
 
-        dr_dtheta = (r_x_prime.dot(r_y).dot(r_z)).T.flatten()
-        dr_dphi = (r_x.dot(r_y_prime).dot(r_z)).T.flatten()
-        dr_dgamma = (r_x.dot(r_y).dot(r_z_prime)).T.flatten()
+            dr_dtheta = (r_x_prime.dot(r_y).dot(r_z)).T.flatten()
+            dr_dphi = (r_x.dot(r_y_prime).dot(r_z)).T.flatten()
+            dr_dgamma = (r_x.dot(r_y).dot(r_z_prime)).T.flatten()
         
-        return np.array(block_diag(wheel_jac, [dr_dtheta, dr_dphi, dr_dgamma]))
+            return np.array(block_diag(wheel_jac, [dr_dtheta, dr_dphi, dr_dgamma]))
+        return output
 
     @override
     def create_vp_object(self, diameter: numeric=15, axis_len: numeric=40, color: vpython.color=vpython.color.cyan) -> vpython.compound:

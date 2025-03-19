@@ -7,6 +7,7 @@ from suspmatics.components import * #TODO remove this import and reference with 
 from suspmatics import components
 from scipy.linalg import block_diag# type: ignore
 import itertools
+from collections import abc
 
 #numeric = typing.Union[int, float]
 #a32 = npt.NDArray[np.float32]
@@ -33,26 +34,26 @@ def modified_interpolation_search(value: float, sorted_list: array32) -> int:
     return pos
 
 class Kinematic_Model:
- 
     def __init__(self, linkages: list[Linkage], wheel_carrier: Wheel_Carrier):
         self.linkages = linkages
         self.wheel_carrier = wheel_carrier
 
         #self.components = np.array([self.wheel_carrier: Component] + self.linkages: Iterable[Component])
         self.components: list[Component] = [self.wheel_carrier] + list[Component](self.linkages)
-        #this list stores the final var index of each component. To access the vars that correspond to a specific components use [input_var_indices[comp_num]-comp.input_count : input_var_indices[comp_num]]
-        self.input_var_indices: list[int] = list(itertools.accumulate([c.input_count for c in self.components])) #there has to be a better way to do this
 
-        self.a_mat = self._global_coef_mat()
-        self.b_vec = self._global_fixed_vec()
+        #this list stores the final var index of each component. To access the vars that correspond to a specific components use [input__indices[comp_num]-comp.input_count : input__indices[comp_num]]
+        comp_input_counts = np.array([c.input_count for c in self.components])
+        end_indices = np.array(itertools.accumulate(comp_input_counts))
+        self.input_indices: list[tuple[int, int]] = list(zip())
+
+        #stores callable functions for the nonlinear terms and jacobians of each component
+        self.nonlinear_functions: list[abc.Callable[[array32], array32]] = [comp.nonlin_expression() for comp in self.components]
+        self.jacobian_functions: list[abc.Callable[[array32], array32]] = [comp.jacobian() for comp in self.components]
+
+
+        self.coef_mat = self._global_coef_mat()
+        self.fixed_vec = self._global_fixed_vec()
         
-        #self.linear_system, self.frame_pickups = self.__generate_linear_system__()
-
-    #TODO create method to generate Kinematic Model from csv file
-    @classmethod
-    def from_file(self, dir: str) -> typing.Self:
-        return NotImplementedError # type: ignore
-
     @classmethod
     def five_link(cls, frame_pickups: list[array32], link_lengths: list[np.float32], upright_pickups: array32) -> typing.Self:
         linkages: list[Linkage] = [Single_Link(pickup, length) for (pickup, length) in zip(frame_pickups, link_lengths)]
@@ -79,7 +80,8 @@ class Kinematic_Model:
         return np.atleast_2d(np.block(fixed_vec)).T
 
     #generates the input to the linear system of eqs using the non-linear input(actual spatial pos/angles of the components)
-    def _generate_x_nonlinear(self, vars: array32) -> array32:
+    def _nonlin_vec(self, vars: array32) -> array32:
+        """
         x: array32 = np.zeros(27, dtype=np.float32) # fix this so initial length is the sum of all the linear input counts
 
         x[0:self.wheel_carrier.linear_input_count] = self.wheel_carrier.nonlin_x_expression(vars[0:self.wheel_carrier.input_count]) #wheel carrier position and rotation
@@ -94,6 +96,8 @@ class Kinematic_Model:
 
             i += linkage.output_count
             j += linkage.input_count
+        """
+        x = np.block([f(vars[index1:index2]) for (f, (index1, index2)) in zip(self.nonlinear_functions, self.input_indices)])
 
         return x
     
@@ -107,15 +111,15 @@ class Kinematic_Model:
 
         driving vals is a list of tuples [(index, value)] that are known beforehand; more than one driving val over-constrains the system
         """
-        x = self._generate_x_nonlinear(vars)
-        nonlin_expressions = (np.dot(self.a_mat, x).T - self.b_vec.T)[0]
+        x = self._nonlin_vec(vars)
+        nonlin_expressions = (np.dot(self.coef_mat, x).T - self.fixed_vec.T)[0]
         driving_exprs = np.array([x[var_index]-value   for(var_index, value)  in driving_vals])
 
         return np.concatenate((nonlin_expressions, driving_exprs))
     
     def jacobian(self, vars: array32, driving_vals: list[tuple[int, components.numeric]]) -> array32:
         
-        jacobians: list[array32] = [comp.jacobian(vars[index-comp.input_count : index]) for (comp, index) in zip(self.components, self.input_var_indices)]
+        jacobians: list[array32] = [f(vars[index1:index2]) for (f, (index1, index2)) in zip(self.jacobian_functions, self.input_indices)]
         #TODO test and delete
         """
         jacobians = np.zeros(self.linkages.shape[0] + 1, dtype=np.ndarray)
@@ -134,12 +138,12 @@ class Kinematic_Model:
         jacobian_matrix: array32 = block_diag(*jacobians)    
 
         #TODO find a way to remove the for loop from this
-        driving_var_matrix: array32 = np.zeros((len(driving_vals),) + self.a_mat[0].shape, dtype=np.float32)
+        driving_var_matrix: array32 = np.zeros((len(driving_vals),) + self.coef_mat[0].shape, dtype=np.float32)
         for i, val in enumerate(driving_vals):
             driving_var_matrix[i,val[0]] = 1
         
         #TODO figure out how to make typing work without output variable
-        output: array32 = np.dot(np.vstack([self.a_mat, driving_var_matrix]), jacobian_matrix.T)
+        output: array32 = np.dot(np.vstack([self.coef_mat, driving_var_matrix]), jacobian_matrix.T)
         return output
 
     def initial_guess(self, driving_vals: list[tuple[int, components.numeric]], conv_tol: float = 0.1) -> sp.optimize.OptimizeResult:
