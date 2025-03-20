@@ -3,11 +3,13 @@ import numpy.typing as npt
 import typing
 import numpy.typing as npt
 import scipy as sp# type: ignore
-from suspmatics.components import * #TODO remove this import and reference with components.foo
-from suspmatics import components
 from scipy.linalg import block_diag# type: ignore
 import itertools
 from collections import abc
+import suspmatics
+from suspmatics.components import numeric, array32, Component, Fixed, Wheel_Carrier
+import suspmatics.components
+
 
 #numeric = typing.Union[int, float]
 #a32 = npt.NDArray[np.float32]
@@ -33,49 +35,86 @@ def modified_interpolation_search(value: float, sorted_list: array32) -> int:
 
     return pos
 
-class Kinematic_Model:
-    def __init__(self, linkages: list[Linkage], wheel_carrier: Wheel_Carrier):
-        self.linkages = linkages
-        self.wheel_carrier = wheel_carrier
 
-        #self.components = np.array([self.wheel_carrier: Component] + self.linkages: Iterable[Component])
-        self.components: list[Component] = [self.wheel_carrier] + list[Component](self.linkages)
+class Sub_Chain():
+    """
+    This class holds a chain of linkages that starts and ends at either a chassis pickup or wheel carrier
+    """
 
-        #this list stores the final var index of each component. To access the vars that correspond to a specific components use [input__indices[comp_num]-comp.input_count : input__indices[comp_num]]
-        comp_input_counts = np.array([c.input_count for c in self.components])
-        end_indices = np.array(list(itertools.accumulate(comp_input_counts)))
-        self.input_indices: list[tuple[int, int]] = list(zip(end_indices-comp_input_counts, end_indices))
-
-        #stores callable functions for the nonlinear terms and jacobians of each component
-        self.nonlinear_functions: list[abc.Callable[[array32], array32]] = [comp.nonlin_expression() for comp in self.components]
-        self.jacobian_functions: list[abc.Callable[[array32], array32]] = [comp.jacobian() for comp in self.components]
-
-
-        self.coef_mat = self._global_coef_mat()
-        self.fixed_vec = self._global_fixed_vec()
+    def __init__(self, fixed_comp: Fixed, end_comp: Fixed|Wheel_Carrier, free_components: list[Component], connections: list[tuple[int, int]]):
         
+
+        if len(connections)!=(len(self.free_components)+2):
+            raise Exception("connections length must match total sum of defined components")
+        
+        self.components: list[tuple[Component, int, int]] = list(zip([fixed_comp]+free_components+[end_comp], *connections))
+
+        self.fixed_comp = fixed_comp
+        self.end_comp = end_comp
+
+
+    
+class Kinematic_Model:
+    def __init__(self, sub_chains: list[Sub_Chain]):
+        """
+        sub_chains is of structure list[list[tuple[Component, start node, end node]]
+
+        -sub-chains define how the kinematic model relates to fixed chassis pickup nodes
+        -each sub-chain must begin with a fixed node and end with either another fixed node or wheel 
+        -two sub chains should not start with the same fixed node
+        -there the intermediate nodes should not contain any wheels or fixed nodes
+        -the end node of the previous component connects to the start node of the next component
+        """
+
+        #TODO benchmark this stuff, I have a feeling this whole section is really bad
+        self.wheel_carriers: list[Wheel_Carrier] = []
+        self.fixed_components: list[Fixed] = []
+        self.free_components: list[Component] = []
+
+
+        for chain in sub_chains:
+            #adds the first components in the chain to fixed components
+            self.fixed_components.append(chain.fixed_comp)
+            #checks the final component of the chain to see if it is a wheel carrier
+            if isinstance(chain.end_comp, Wheel_Carrier):
+                self.wheel_carriers.append(chain.end_comp)
+
+            for comp, start_node, end_node in chain.components[1:-1]:
+                #adds any new components to the components list
+                if comp not in self.free_components:=
+                    self.free_components.append(comp)
+
+
+
+        self.components: list[Component] = self.wheel_carriers + self.free_components + self.fixed_components
+        self.sub_chains: list[list[tuple[int, int, int]]] = [ [(self.components.index(comp), start_node, end_node) for comp, start_node, end_node in chain.components] for chain in sub_chains] 
+
+
+    """
     @classmethod
     def five_link(cls, frame_pickups: list[array32], link_lengths: list[np.float32], upright_pickups: array32) -> typing.Self:
         linkages: list[Linkage] = [Single_Link(pickup, length) for (pickup, length) in zip(frame_pickups, link_lengths)]
         upright = Upright(upright_pickups)
 
         return cls(linkages, upright)
-    
+    """
+
     #generates the matrix of coefficients to the linearized system of eqs
     def _global_coef_mat(self) -> array32:
-        wc_local_coef_mat = self.wheel_carrier.local_coef_mat()
-        links_local_coef_mat: list[array32] = [linkage.local_coef_mat() for linkage in self.linkages]
+        def sub_chain_coef_row(components: list[tuple[int, int, int]]) -> list[array32]:
+            #creates a list of zero matrices the same size as local coef matrices
+            output: list[array32] = [np.zeros((3, comp.linear_input_count), dtype=np.float32) for comp in self.components]
+            #sets the output blocks for the components in the chain
+            for (comp_index, start_node, end_node) in components:
+                output[comp_index] = self.components[comp_index].local_coef_mat(start_node, end_node)
 
-        #TODO refactor with array slices to limit data copying
-        links_local_coef_mat = block_diag(*links_local_coef_mat)
-        coef_mat = np.block([wc_local_coef_mat, links_local_coef_mat])
+            return output
         
-        return coef_mat
+        return np.block([sub_chain_coef_row(chain.components) for chain in self.sub_chains])
     
     #generates the solution to the linearized system of eqs
     def _global_fixed_vec(self) -> array32:
-        fixed_vec = [linkage.local_fixed_vec() for linkage in self.linkages]
-        
+        fixed_vec = [linkage.local_fixed_vec() for linkage in self.self.fixed_components]
         #see if its possible to get rid of transpose
         return np.atleast_2d(np.block(fixed_vec)).T
 
@@ -102,7 +141,7 @@ class Kinematic_Model:
         return x
     
     
-    def full_sys_of_eq(self, vars: array32, driving_vals: list[tuple[int, components.numeric]]) -> array32:
+    def full_sys_of_eq(self, vars: array32, driving_vals: list[tuple[int, suspmatics.components.numeric]]) -> array32:
         """
         Returns the full system of equations generated by the kinematic model
 
@@ -117,7 +156,7 @@ class Kinematic_Model:
 
         return np.concatenate((nonlin_expressions, driving_exprs))
     
-    def jacobian(self, vars: array32, driving_vals: list[tuple[int, components.numeric]]) -> array32:
+    def jacobian(self, vars: array32, driving_vals: list[tuple[int, suspmatics.components.numeric]]) -> array32:
         
         jacobians: list[array32] = [f(vars[index1:index2]) for (f, (index1, index2)) in zip(self.jacobian_functions, self.input_indices)]
         print(self.input_indices)
@@ -144,12 +183,13 @@ class Kinematic_Model:
         driving_var_matrix: array32 = np.zeros((len(driving_vals),) + self.coef_mat[0].shape, dtype=np.float32)
         for i, val in enumerate(driving_vals):
             driving_var_matrix[i,val[0]] = 1
+
         
         #TODO figure out how to make typing work without output variable
         output: array32 = np.dot(np.vstack([self.coef_mat, driving_var_matrix]), jacobian_matrix.T)
         return output
 
-    def initial_guess(self, driving_vals: list[tuple[int, components.numeric]], conv_tol: float = 0.1) -> sp.optimize.OptimizeResult:
+    def initial_guess(self, driving_vals: list[tuple[int, suspmatics.components.numeric]], conv_tol: float = 0.1) -> sp.optimize.OptimizeResult:
         """
         Initial guess creates an approximate solution to an over-constrained kinematic model
 
@@ -205,6 +245,9 @@ class Kinematic_Model:
             guess = lower_solutions[i]
 
         return solutions
+
+
+
 
 
 

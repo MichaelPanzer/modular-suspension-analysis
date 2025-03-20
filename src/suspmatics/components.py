@@ -29,8 +29,6 @@ array32 = npt.NDArray[np.float32]
 """
 vp_transf_mat = np.array([[0,-1,0], [0,0,-1], [1,0,0]]) 
 
-
-
 class Component(ABC):
     @property
     @abstractmethod
@@ -57,7 +55,7 @@ class Component(ABC):
 
 
     @abstractmethod
-    def local_coef_mat(self) -> array32:
+    def local_coef_mat(self, start_pickup: int, end_pickup: int) -> array32:
         pass
 
     @abstractmethod
@@ -76,21 +74,21 @@ class Component(ABC):
     def update_vp_position(self, vp_object: vpython.compound, vars: array32) -> vpython.compound:
         pass
 
-class Linkage(Component):   
+class Fixed(Component):   
     def __init__(self, init_vars: array32):
         super().__init__(init_vars)
 
     @abstractmethod
     def local_fixed_vec(self) -> array32:
         pass
+    
 class Wheel_Carrier(Component): 
     def __init__(self, init_vars: array32):
         super().__init__(init_vars)
 
     pass
 
-
-class Single_Link(Linkage):
+class Single_Link(Fixed):
     """
     Single_Link models a rigid tension/compression link with one fixed end
     """
@@ -99,14 +97,15 @@ class Single_Link(Linkage):
     output_count = 3
     input_names = ["alpha", "beta"]
 
-    def __init__(self, frame_pickup: array32, length: numeric, init_vars: array32=np.array([np.pi/2, 0])):
+    def __init__(self, length: numeric, frame_pickup: array32, init_vars:array32=np.array([np.pi/2, 0])):
         super().__init__(init_vars)
-        self.frame_pickup: array32 = frame_pickup
-        self.length = length
+        self.frame_pickup = frame_pickup
+
+        self.length: np.float32 = np.float32(length)
 
     @override
-    def local_coef_mat(self) -> array32:
-        return np.multiply(-1.0*self.length, np.identity(3), dtype=np.float32)
+    def local_coef_mat(self, start_pickup: int, end_pickup: int) -> array32:
+        return np.multiply(-self.length, np.identity(3), dtype=np.float32)
     
     @override
     def local_fixed_vec(self) -> array32:
@@ -148,40 +147,42 @@ class Single_Link(Linkage):
         wheel_side_cone.pos = cylinder.pos+cylinder.axis
         wheel_side_cone.radius = radius
 
-        return vpython.compound([frame_side_cone, cylinder, wheel_side_cone], origin=vpython.vector(0,0,0), pos=vpython.vector(*np.dot(vp_transf_mat, self.frame_pickup)), color=color)
+        return vpython.compound([frame_side_cone, cylinder, wheel_side_cone], origin=vpython.vector(0,0,0), pos=vpython.vector(*np.dot(vp_transf_mat, self.frame_pickups)), color=color)
 
     @override
     def update_vp_position(self, vp_object: vpython.compound, vars: array32) -> vpython.compound:
         vp_object.axis = vpython.vector(*np.dot(vp_transf_mat, self.nonlin_expression()(vars)))
         return vp_object
     
-class A_Arm(Linkage):
+class A_Arm(Fixed):
     """
-    A_Arm models a rigid linkage with a fixed pivot axis (two ball joints) on the inboard side and a ball joint on the outboard side
+    A_Arm models a rigid Fixed with a fixed pivot axis (two ball joints) on the inboard side and a ball joint on the outboard side
     """
     input_count = 1
     linear_input_count = 3
     output_count = 3
     input_names = ["alpha"]
     
-    def __init__(self, frame_pickup_0: array32, frame_pickup_1: array32, ball_joint_pos: array32):
-        self.frame_pickup_0: array32 = frame_pickup_0
-        self.frame_pickup_1: array32 = frame_pickup_1
+    def __init__(self, ball_joint_pos: array32, frame_pickupss: array32, init_vars:array32=np.array([0])):
+        super().__init__(init_vars, frame_pickupss)
 
         self.ball_joint_pos: array32 = ball_joint_pos
 
-        pickup_1_to_0: array32 = frame_pickup_0-frame_pickup_1
-        rotation_axis_unit_vector: array32 = np.atleast_2d(pickup_1_to_0 / np.linalg.norm(pickup_1_to_0))
+        self.frame_pickups_0: array32 = frame_pickupss[:3]
+        self.frame_pickups_1: array32 = frame_pickupss[3:]
+
+        #pickup_1_to_0: array32 = self.frame_pickups_0-self.frame_pickups_1
+        #pivot_axis: array32 = np.atleast_2d(pickup_1_to_0 / np.linalg.norm(pickup_1_to_0))
 
         #saves pivot axis as unit vector
-        pivot: array32 = frame_pickup_0 - frame_pickup_1
+        pivot: array32 = self.frame_pickups_0-self.frame_pickups_1
         self.pivot_axis: array32 = pivot / np.linalg.norm(pivot)
 
         #https://en.wikipedia.org/wiki/Rotation_matrix
-        self.cross_product_matrix: array32 = np.array([[                            0, -rotation_axis_unit_vector[0,2], rotation_axis_unit_vector[0,1] ],
-                                              [ rotation_axis_unit_vector[0,2],                             0, -rotation_axis_unit_vector[0,0]],
-                                              [-rotation_axis_unit_vector[0,1],  rotation_axis_unit_vector[0,0],                             0]])
-        self.outer_product_matrix: array32 = np.dot(rotation_axis_unit_vector.T, rotation_axis_unit_vector)
+        self.cross_product_matrix: array32 = np.array([[                            0, -self.pivot_axis[2], self.pivot_axis[1] ],
+                                                        [ self.pivot_axis[2],                             0, -self.pivot_axis[0]],
+                                                        [-self.pivot_axis[1],  self.pivot_axis[0],                             0]])
+        self.outer_product_matrix: array32 = np.dot(self.pivot_axis.T, self.pivot_axis)
 
         #this is the point on the pivot axis where the ball joint position vector is orthogonal to axis
         self.orthogonal_link_position: array32 = np.dot(self.outer_product_matrix, np.atleast_2d(self.ball_joint_pos).T)
@@ -197,7 +198,7 @@ class A_Arm(Linkage):
     
     @override
     def local_fixed_vec(self) -> array32:
-        return self.frame_pickup_0 - self.orthogonal_link_position
+        return self.frame_pickups_0 - self.orthogonal_link_position
 
     @override
     def nonlin_expression(self) -> abc.Callable[[array32], array32]:
