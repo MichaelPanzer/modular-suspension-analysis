@@ -80,7 +80,7 @@ class Kinematic_Model:
             if isinstance(chain.end_comp, Wheel_Carrier) and chain.end_comp not in self.wheel_carriers:
                 self.wheel_carriers.append(chain.end_comp)
 
-            for (comp, start_node, end_node) in chain.chain_list[1:-1]:
+            for (comp, (start_node, end_node)) in chain.chain_list[1:-1]:
                 #adds any new components to the components list
                 if comp not in self.free_components:
                     self.free_components.append(comp)
