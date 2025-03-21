@@ -1,10 +1,10 @@
 # type: ignore #TODO this probably isn't good
-import importlib
+import sys
 import numpy as np
 from suspmatics.independent_suspension import *
 from jacobi import jacobi
 
-np.set_printoptions(precision=1, suppress=True, linewidth=150)
+np.set_printoptions(precision=1, suppress=True, linewidth=500, threshold=sys.maxsize)
 #array32 = npt.NDArray[np.float32]
 
 frame_pickups = np.array([[31,32,33],
@@ -43,7 +43,8 @@ def test_A():
     fl = Kinematic_Model.five_link(frame_pickups, lengths, upright_pickups)
     
     a = fl._global_coef_mat()
-
+    print(a[:,:15])
+    print(a[:,-15:])
     assert np.array_equal(a, correct_output)
 
 def test_B():

@@ -55,7 +55,7 @@ class Component(ABC):
 
 
     @abstractmethod
-    def local_coef_mat(self, start_pickup: int, end_pickup: int) -> array32:
+    def local_coef_mat(self, start_node: int, end_node: int) -> array32:
         pass
 
     @abstractmethod
@@ -104,7 +104,7 @@ class Single_Link(Fixed):
         self.length: np.float32 = np.float32(length)
 
     @override
-    def local_coef_mat(self, start_pickup: int, end_pickup: int) -> array32:
+    def local_coef_mat(self, start_node: int, end_node: int) -> array32:
         return np.multiply(-self.length, np.identity(3), dtype=np.float32)
     
     @override
@@ -147,7 +147,7 @@ class Single_Link(Fixed):
         wheel_side_cone.pos = cylinder.pos+cylinder.axis
         wheel_side_cone.radius = radius
 
-        return vpython.compound([frame_side_cone, cylinder, wheel_side_cone], origin=vpython.vector(0,0,0), pos=vpython.vector(*np.dot(vp_transf_mat, self.frame_pickups)), color=color)
+        return vpython.compound([frame_side_cone, cylinder, wheel_side_cone], origin=vpython.vector(0,0,0), pos=vpython.vector(*np.dot(vp_transf_mat, self.frame_pickup)), color=color)
 
     @override
     def update_vp_position(self, vp_object: vpython.compound, vars: array32) -> vpython.compound:
@@ -163,13 +163,13 @@ class A_Arm(Fixed):
     output_count = 3
     input_names = ["alpha"]
     
-    def __init__(self, ball_joint_pos: array32, frame_pickupss: array32, init_vars:array32=np.array([0])):
-        super().__init__(init_vars, frame_pickupss)
+    def __init__(self, ball_joint_pos: array32, frame_pickups: array32, init_vars:array32=np.array([0])):
+        super().__init__(init_vars)
 
         self.ball_joint_pos: array32 = ball_joint_pos
 
-        self.frame_pickups_0: array32 = frame_pickupss[:3]
-        self.frame_pickups_1: array32 = frame_pickupss[3:]
+        self.frame_pickups_0: array32 = frame_pickups[:3]
+        self.frame_pickups_1: array32 = frame_pickups[3:]
 
         #pickup_1_to_0: array32 = self.frame_pickups_0-self.frame_pickups_1
         #pivot_axis: array32 = np.atleast_2d(pickup_1_to_0 / np.linalg.norm(pickup_1_to_0))
@@ -188,7 +188,7 @@ class A_Arm(Fixed):
         self.orthogonal_link_position: array32 = np.dot(self.outer_product_matrix, np.atleast_2d(self.ball_joint_pos).T)
 
     @override
-    def local_coef_mat(self) -> array32:
+    def local_coef_mat(self, start_node: int, end_node: int) -> array32:
         ball_joint_column_vec = np.atleast_2d(self.ball_joint_pos).T
 
         cos_column = np.dot((np.identity(3)-self.outer_product_matrix), ball_joint_column_vec)
@@ -249,12 +249,20 @@ class Upright(Wheel_Carrier):
     def output_count(self) -> int:
         return 3*self.pickup_count
 
+    #This defiantly needs to be checked
     @override
-    def local_coef_mat(self) -> array32:
-        wheel_coef_mat: array32 = np.block([[np.identity(3)]]*self.pickup_count)
-        pickup_coef_mat: array32 = np.block([[pickup_coord*np.identity(3) for pickup_coord in pickup] for pickup in self.pickups])
-        
-        return np.block([wheel_coef_mat, pickup_coef_mat])
+    def local_coef_mat(self, start_node: int, end_node: int) -> array32:
+        if start_node!=0: #start node is not wheel
+            start_coef_mat: array32 = np.block([np.zeros((3,3))]+[pickup_coord*np.identity(3) for pickup_coord in self.pickups[start_node-1]])
+        else:
+            start_coef_mat: array32 = np.block([np.identity(3), np.zeros((3,9))])
+
+        if end_node!=0:
+            end_coef_mat: array32 = np.block([np.zeros((3,3))]+[pickup_coord*np.identity(3) for pickup_coord in self.pickups[end_node-1]])
+        else:
+            end_coef_mat: array32 = np.block([np.identity(3), np.zeros((3,9))])
+        print(str(start_node) + "," + str(end_node))
+        return end_coef_mat+start_coef_mat
     
     @override
     def nonlin_expression(self) -> abc.Callable[[array32], array32]:
