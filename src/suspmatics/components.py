@@ -252,17 +252,19 @@ class Upright(Wheel_Carrier):
     #This defiantly needs to be checked
     @override
     def local_coef_mat(self, start_node: int, end_node: int) -> array32:
-        if start_node!=0: #start node is not wheel
-            start_coef_mat: array32 = np.block([np.zeros((3,3))]+[pickup_coord*np.identity(3) for pickup_coord in self.pickups[start_node-1]])
-        else:
+        if start_node==0: #start node is at the wheel
             start_coef_mat: array32 = np.block([np.identity(3), np.zeros((3,9))])
-
-        if end_node!=0:
-            end_coef_mat: array32 = np.block([np.zeros((3,3))]+[pickup_coord*np.identity(3) for pickup_coord in self.pickups[end_node-1]])
         else:
+            start_coef_mat: array32 = np.block([np.zeros((3,3))]+[-pickup_coord*np.identity(3) for pickup_coord in self.pickups[start_node-1]])
+
+
+        if end_node==0: #end node is at the wheel
             end_coef_mat: array32 = np.block([np.identity(3), np.zeros((3,9))])
-        print(str(start_node) + "," + str(end_node))
-        return end_coef_mat+start_coef_mat
+        else:
+            end_coef_mat = np.block([np.zeros((3,3))]+[pickup_coord*np.identity(3) for pickup_coord in self.pickups[end_node-1]])
+
+        
+        return end_coef_mat-start_coef_mat
     
     @override
     def nonlin_expression(self) -> abc.Callable[[array32], array32]:

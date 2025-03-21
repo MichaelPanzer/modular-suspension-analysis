@@ -1,3 +1,4 @@
 *.pyc
 *.ctyph
-src/suspmatics/__pycache__/*
+*.cpython
+**/__pycache__/
