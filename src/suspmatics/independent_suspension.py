@@ -41,7 +41,7 @@ class Sub_Chain():
 
     def __init__(self, fixed_comp: Fixed, end_comp: Fixed|Wheel_Carrier, free_components: list[Component], connections: list[tuple[int, int]]):
         if len(connections)!=(len(free_components)+2):
-            raise Exception("connections length must match total sum of defined components")
+            raise Exception("the number of connections must match total sum of defined components")
         if connections[0][0]!=0 or connections[-1][1]!=0:
             raise Exception("sub chain must begin and end on node 0")
 
@@ -68,7 +68,6 @@ class Kinematic_Model:
         """
 
         #TODO benchmark this stuff, this whole section is definitely really bad
-        #
         self.wheel_carriers: list[Wheel_Carrier] = []
         self.fixed_components: list[Fixed] = []
         self.free_components: list[Component] = []
@@ -97,6 +96,11 @@ class Kinematic_Model:
         print(self.sub_chain_list)
 
         self.coef_row_size: list[array32] = [np.zeros((3, comp.linear_input_count), dtype=np.float32) for comp in self.components]
+
+        #stores the input variables used for each component
+        comp_input_counts = np.array([c.input_count for c in self.components])
+        end_indices = np.array(list(itertools.accumulate(comp_input_counts)))
+        self.input_indices: list[tuple[int, int]] = list(zip(end_indices-comp_input_counts, end_indices))
 
         #stores callable functions for the nonlinear terms and jacobians of each component
         self.nonlinear_functions: list[abc.Callable[[array32], array32]] = [comp.nonlin_expression() for comp in self.components]
