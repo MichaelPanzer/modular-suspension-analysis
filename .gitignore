@@ -2,7 +2,4 @@
 *.ctyph
 *.cpython
 **/__pycache__/
-src/suspmatics/__pycache__/components.cpython-312.pyc
-src/suspmatics/__pycache__/independent_suspension.cpython-312.pyc
-Tests/__pycache__/test_components.cpython-312-pytest-8.3.3.pyc
-Tests/__pycache__/test_independent_suspension.cpython-312-pytest-8.3.3.pyc
+**/.pytest_cache/
