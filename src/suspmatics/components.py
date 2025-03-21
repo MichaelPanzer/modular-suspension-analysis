@@ -255,7 +255,7 @@ class Upright(Wheel_Carrier):
         if start_node==0: #start node is at the wheel
             start_coef_mat: array32 = np.block([np.identity(3), np.zeros((3,9))])
         else:
-            start_coef_mat: array32 = np.block([np.zeros((3,3))]+[-pickup_coord*np.identity(3) for pickup_coord in self.pickups[start_node-1]])
+            start_coef_mat = np.block([np.zeros((3,3))]+[-pickup_coord*np.identity(3) for pickup_coord in self.pickups[start_node-1]])
 
 
         if end_node==0: #end node is at the wheel

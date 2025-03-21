@@ -1,5 +1,4 @@
 *.pyc
-*.ctyph
 *.cpython
 **/__pycache__/
 **/.pytest_cache/
