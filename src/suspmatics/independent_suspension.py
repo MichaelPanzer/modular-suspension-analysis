@@ -35,24 +35,13 @@ def modified_interpolation_search(value: float, sorted_list: array32) -> int:
 
 
 class Sub_Chain():
-    """
-    This class holds a chain of linkages that starts and ends at either a chassis pickup or wheel carrier
-    """
-
-    #def __init__(self, fixed_comp: Fixed, end_comp: Fixed|Wheel_Carrier, free_components: list[Component], connections: list[tuple[int, int]]):
-        #if len(connections)!=(len(free_components)+2):
-            #raise Exception("the number of connections must match total sum of defined components")
-        #if connections[0][0]!=0 or connections[-1][1]!=0:
-            #raise Exception("sub chain must begin and end on node 0")
-
-        
-        #[(Component, (start_node, end_node))]
-        #self.chain_list: list[tuple[Component, tuple[int, int]]] = list(zip([fixed_comp]+free_components+[end_comp], connections))
-
-        #self.fixed_comp = fixed_comp
-        #self.end_comp = end_comp
-
+    """Holds a chain of linkages that starts and ends at either a chassis pickup or wheel carrier"""
     def __init__(self, components: list[Component], connections: list[tuple[int, int]]):
+            """
+            components -- list of components used in this Sub_Chain 
+
+            connections -- list of tuples used to specify the nodes used in those components : list[(start_node, end_node)]
+            """
             if len(connections)!=(len(components)):
                 raise Exception("The number of connections must match total sum of defined components")
             if connections[0][0]!=0 or connections[-1][1]!=0:
@@ -70,9 +59,9 @@ class Sub_Chain():
 
     def fixed_vec(self) -> array32:
         """
-        This method returns the vector relating the initial and final positions of the chain
+        Returns the vector relating the initial and final positions of the chain
 
-        If the end component is not fixed (meaning it is a wheel carrier), its position is accounted for in its nonlin vec and coef mat
+        If the end component is not fixed (meaning it is a wheel carrier), its position is accounted for in its nonlin vec and coef mat and this method only returns the fixed vector of the start component
         """
         output = self.fixed_comp.local_fixed_vec()
 
@@ -84,66 +73,14 @@ class Sub_Chain():
 
     
 class Kinematic_Model:
-    #TODO this function really should take in a list of components and a sparse matrix defining the relationships between those components
-    #The sub chains should be generated from this matrix
-    """
-    def __init__(self, sub_chains: list[Sub_Chain]):
-        
-        sub_chains is of structure list[list[tuple[Component, start node, end node]]
-
-        -sub-chains define how the kinematic model relates to fixed chassis pickup nodes
-        -each sub-chain must begin with a fixed node and end with either another fixed node or wheel 
-        -two sub chains should not start with the same fixed node
-        -there the intermediate nodes should not contain any wheels or fixed nodes
-        -the end node of the previous component connects to the start node of the next component
-        
-
-        self.sub_chains = sub_chains
-
-        #TODO benchmark this stuff, this whole section is definitely really bad
-        self.wheel_carriers: list[Wheel_Carrier] = []
-        self.fixed_components: list[Fixed] = []
-        self.free_components: list[Component] = []
-
-
-        for chain in sub_chains:
-            #adds the first components in the chain to fixed components
-            self.fixed_components.append(chain.fixed_comp)
-            #checks the final component of the chain to see if it is a wheel carrier
-            if isinstance(chain.end_comp, Wheel_Carrier) and chain.end_comp not in self.wheel_carriers:
-                self.wheel_carriers.append(chain.end_comp)
-
-            for (comp, (start_node, end_node)) in chain.chain_list[1:-1]:
-                #adds any new components to the components list
-                if comp not in self.free_components:
-                    self.free_components.append(comp)
-
-        self.comps: list[Component] = self.wheel_carriers + self.free_components + list[Component](self.fixed_components)
-        #comp_lists = [chain.chain_list for chain in sub_chains]
-
-        for chain in sub_chains:
-            print(chain.chain_list)
-        # [[(component index, start node, end node)]]
-        self.connections: list[list[tuple[int, int, int]]] = [[(self.comps.index(comp),start_node, end_node) for (comp, (start_node, end_node)) in chain.chain_list] for chain in sub_chains] 
-        #print(self.connections)
-        print(self.connections)
-
-        self.coef_row_size: list[array32] = [np.zeros((3, comp.linear_input_count), dtype=np.float32) for comp in self.comps]
-
-        #stores the input variables used for each component
-        comp_input_counts = np.array([c.input_count for c in self.comps])
-        end_indices = np.array(list(itertools.accumulate(comp_input_counts)))
-        self.input_indices: list[tuple[int, int]] = list(zip(end_indices-comp_input_counts, end_indices))
-
-        #stores callable functions for the nonlinear terms and jacobians of each component
-        self.nonlinear_functions: list[abc.Callable[[array32], array32]] = [comp.nonlin_expression() for comp in self.comps]
-        self.jacobian_functions: list[abc.Callable[[array32], array32]] = [comp.jacobian() for comp in self.comps]
-
-
-        self.coef_mat = self._global_coef_mat()
-        self.fixed_vec = self._global_fixed_vec()
-    """
     def __init__(self, comps: list[Component], connections: list[list[tuple[int, int, int]]]):
+        """
+        comps -- list of all components used in this Kinematic_Model
+
+        connections -- list of the connections used to generate Sub_Chains [[(component_index, start_node, end_node)]]
+        """
+
+        #TODO add exceptions to catch errors in comps, connections
         self.comps = comps
         self.connections = connections
 
@@ -170,6 +107,11 @@ class Kinematic_Model:
 
     @classmethod
     def five_link(cls, frame_pickups: list[array32], link_lengths: list[np.float32], upright_pickups: array32) -> typing.Self:
+        """
+        Creates a Kinematic_Model of a five link suspension for a single wheel
+
+        Add descrips of inputs
+        """
         linkages: list[Component] = [components.Single_Link(length, pickup) for (pickup, length) in zip(frame_pickups, link_lengths)]
         upright: Component = components.Upright(upright_pickups)
         comps: list[Component] = [upright] + linkages
@@ -195,22 +137,6 @@ class Kinematic_Model:
 
     #generates the input to the linear system of eqs using the non-linear input(actual spatial pos/angles of the components)
     def _nonlin_vec(self, vars: array32) -> array32:
-        """
-        x: array32 = np.zeros(27, dtype=np.float32) # fix this so initial length is the sum of all the linear input counts
-
-        x[0:self.wheel_carrier.linear_input_count] = self.wheel_carrier.nonlin_x_expression(vars[0:self.wheel_carrier.input_count]) #wheel carrier position and rotation
-
-        link_vecs = x[self.wheel_carrier.linear_input_count:]
-        link_angles = vars[self.wheel_carrier.input_count:]
-
-        i = 0 #link vec index
-        j = 0 #link angle index
-        for linkage in self.linkages:                 
-            link_vecs[i:i+linkage.output_count] = linkage.nonlin_x_expression(link_angles[j:j+linkage.input_count])
-
-            i += linkage.output_count
-            j += linkage.input_count
-        """
         x = np.block([f(vars[index1:index2]) for (f, (index1, index2)) in zip(self.nonlinear_functions, self.input_indices)])
 
         return x
@@ -220,7 +146,7 @@ class Kinematic_Model:
         """
         Returns the full system of equations generated by the kinematic model
 
-        The resulting vector represents the error caused by a specific input.
+        The resulting vector represents the error caused by a specific input
         When the output of this method is 0, the system is solved
 
         driving vals is a list of tuples [(index, value)] that are known beforehand; more than one driving val over-constrains the system
