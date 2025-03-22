@@ -39,20 +39,35 @@ class Sub_Chain():
     This class holds a chain of linkages that starts and ends at either a chassis pickup or wheel carrier
     """
 
-    def __init__(self, fixed_comp: Fixed, end_comp: Fixed|Wheel_Carrier, free_components: list[Component], connections: list[tuple[int, int]]):
-        if len(connections)!=(len(free_components)+2):
-            raise Exception("the number of connections must match total sum of defined components")
-        if connections[0][0]!=0 or connections[-1][1]!=0:
-            raise Exception("sub chain must begin and end on node 0")
+    #def __init__(self, fixed_comp: Fixed, end_comp: Fixed|Wheel_Carrier, free_components: list[Component], connections: list[tuple[int, int]]):
+        #if len(connections)!=(len(free_components)+2):
+            #raise Exception("the number of connections must match total sum of defined components")
+        #if connections[0][0]!=0 or connections[-1][1]!=0:
+            #raise Exception("sub chain must begin and end on node 0")
 
         
         #[(Component, (start_node, end_node))]
-        self.chain_list: list[tuple[Component, tuple[int, int]]] = list(zip([fixed_comp]+free_components+[end_comp], connections))
-        print(str(self.chain_list)+ "--" +str(connections))
+        #self.chain_list: list[tuple[Component, tuple[int, int]]] = list(zip([fixed_comp]+free_components+[end_comp], connections))
 
-        self.fixed_comp = fixed_comp
-        self.end_comp = end_comp
-    
+        #self.fixed_comp = fixed_comp
+        #self.end_comp = end_comp
+
+    def __init__(self, components: list[Component], connections: list[tuple[int, int]]):
+            if len(connections)!=(len(components)):
+                raise Exception("The number of connections must match total sum of defined components")
+            if connections[0][0]!=0 or connections[-1][1]!=0:
+                raise Exception("Sub chain must begin and end on node 0")    
+            if not isinstance(components[0], Fixed):
+                raise TypeError("The first component in a chain must be fixed")
+            if not isinstance(components[-1],Fixed|Wheel_Carrier):
+                raise TypeError("The final component in a chain must be either a fixed component or a wheel carrier")
+            
+
+            self.chain_list: list[tuple[Component, tuple[int, int]]] = list(zip(components, connections))
+            self.fixed_comp = components[0]
+            self.end_comp = components[-1]
+
+
     def fixed_vec(self) -> array32:
         """
         This method returns the vector relating the initial and final positions of the chain
@@ -71,8 +86,9 @@ class Sub_Chain():
 class Kinematic_Model:
     #TODO this function really should take in a list of components and a sparse matrix defining the relationships between those components
     #The sub chains should be generated from this matrix
+    """
     def __init__(self, sub_chains: list[Sub_Chain]):
-        """
+        
         sub_chains is of structure list[list[tuple[Component, start node, end node]]
 
         -sub-chains define how the kinematic model relates to fixed chassis pickup nodes
@@ -80,7 +96,7 @@ class Kinematic_Model:
         -two sub chains should not start with the same fixed node
         -there the intermediate nodes should not contain any wheels or fixed nodes
         -the end node of the previous component connects to the start node of the next component
-        """
+        
 
         self.sub_chains = sub_chains
 
@@ -102,50 +118,74 @@ class Kinematic_Model:
                 if comp not in self.free_components:
                     self.free_components.append(comp)
 
-        self.components: list[Component] = self.wheel_carriers + self.free_components + list[Component](self.fixed_components)
+        self.comps: list[Component] = self.wheel_carriers + self.free_components + list[Component](self.fixed_components)
         #comp_lists = [chain.chain_list for chain in sub_chains]
 
         for chain in sub_chains:
             print(chain.chain_list)
         # [[(component index, start node, end node)]]
-        self.sub_chain_list: list[list[tuple[int, int, int]]] = [[(self.components.index(comp),start_node, end_node) for (comp, (start_node, end_node)) in chain.chain_list] for chain in sub_chains] 
-        #print(self.sub_chain_list)
-        print(self.sub_chain_list)
+        self.connections: list[list[tuple[int, int, int]]] = [[(self.comps.index(comp),start_node, end_node) for (comp, (start_node, end_node)) in chain.chain_list] for chain in sub_chains] 
+        #print(self.connections)
+        print(self.connections)
 
-        self.coef_row_size: list[array32] = [np.zeros((3, comp.linear_input_count), dtype=np.float32) for comp in self.components]
+        self.coef_row_size: list[array32] = [np.zeros((3, comp.linear_input_count), dtype=np.float32) for comp in self.comps]
 
         #stores the input variables used for each component
-        comp_input_counts = np.array([c.input_count for c in self.components])
+        comp_input_counts = np.array([c.input_count for c in self.comps])
         end_indices = np.array(list(itertools.accumulate(comp_input_counts)))
         self.input_indices: list[tuple[int, int]] = list(zip(end_indices-comp_input_counts, end_indices))
 
         #stores callable functions for the nonlinear terms and jacobians of each component
-        self.nonlinear_functions: list[abc.Callable[[array32], array32]] = [comp.nonlin_expression() for comp in self.components]
-        self.jacobian_functions: list[abc.Callable[[array32], array32]] = [comp.jacobian() for comp in self.components]
+        self.nonlinear_functions: list[abc.Callable[[array32], array32]] = [comp.nonlin_expression() for comp in self.comps]
+        self.jacobian_functions: list[abc.Callable[[array32], array32]] = [comp.jacobian() for comp in self.comps]
 
 
+        self.coef_mat = self._global_coef_mat()
+        self.fixed_vec = self._global_fixed_vec()
+    """
+    def __init__(self, comps: list[Component], connections: list[list[tuple[int, int, int]]]):
+        self.comps = comps
+        self.connections = connections
+
+        self.sub_chains: list[Sub_Chain] = [Sub_Chain([self.comps[comp_index] for (comp_index,s,e) in conn_row], [(start_node,end_node) for (i,start_node,end_node) in conn_row]) for conn_row in self.connections]
+        
+
+        #stores callable functions for the nonlinear terms and jacobians of each component
+        self.nonlinear_functions: list[abc.Callable[[array32], array32]] = [comp.nonlin_expression() for comp in self.comps]
+        self.jacobian_functions: list[abc.Callable[[array32], array32]] = [comp.jacobian() for comp in self.comps]
+        
+
+        #Stores sizes of coef matrix rows and input vector indices 
+        self.coef_row_size: list[array32] = [np.zeros((3, comp.linear_input_count), dtype=np.float32) for comp in self.comps]
+
+        comp_input_counts = np.array([c.input_count for c in self.comps])
+        end_indices = np.array(list(itertools.accumulate(comp_input_counts)))
+        self.input_indices: list[tuple[int, int]] = list(zip(end_indices-comp_input_counts, end_indices))
+        
+
+        #Creates and saves linear coefs (this should be a separate update() method)
         self.coef_mat = self._global_coef_mat()
         self.fixed_vec = self._global_fixed_vec()
 
 
     @classmethod
     def five_link(cls, frame_pickups: list[array32], link_lengths: list[np.float32], upright_pickups: array32) -> typing.Self:
-        linkages: list[Fixed] = [components.Single_Link(length, pickup) for (pickup, length) in zip(frame_pickups, link_lengths)]
-        upright = components.Upright(upright_pickups)
+        linkages: list[Component] = [components.Single_Link(length, pickup) for (pickup, length) in zip(frame_pickups, link_lengths)]
+        upright: Component = components.Upright(upright_pickups)
+        comps: list[Component] = [upright] + linkages
+        
 
-        sub_chains = [Sub_Chain(link, upright, [], [(0,1), (i+1,0)]) for (i, link) in enumerate(linkages)]
-
-        return cls(sub_chains)
+        return cls(comps, [[(i+1,0,1), (0,i+1,0)] for i in range(len(linkages))])
 
     #generates the matrix of coefficients to the linearized system of eqs
     def _global_coef_mat(self) -> array32:
-        def sub_chain_coef_row(sub_chain_list: list[tuple[int, int, int]]) -> list[array32]:
+        def sub_chain_coef_row(connections: list[tuple[int, int, int]]) -> list[array32]:
             output = self.coef_row_size.copy()
-            for (comp_index, start_node, end_node) in sub_chain_list:
-                output[comp_index] = self.components[comp_index].local_coef_mat(start_node, end_node)
+            for (comp_index, start_node, end_node) in connections:
+                output[comp_index] = self.comps[comp_index].local_coef_mat(start_node, end_node)
             return output
         
-        return np.block([sub_chain_coef_row(chain_list) for chain_list in self.sub_chain_list])
+        return np.block([sub_chain_coef_row(chain_list) for chain_list in self.connections])
     
     #generates the solution to the linearized system of eqs
     def _global_fixed_vec(self) -> array32:
@@ -235,7 +275,7 @@ class Kinematic_Model:
             return self.full_sys_of_eq(vars, driving_vals), self.jacobian(vars, driving_vals)
 
 
-        guess: array32 = np.concatenate([comp.init_vars for comp in self.components])
+        guess: array32 = np.concatenate([comp.init_vars for comp in self.comps])
         for (index, value) in driving_vals:
             guess[index] = value
 
