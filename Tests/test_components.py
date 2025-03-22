@@ -12,9 +12,9 @@ def test_A_arm_rotation_length_doesnt_change():
 
     outer_ball_joint = np.array([rx, ry, rz])
 
-    a_arm = A_Arm(np.array([0,0,0]), np.array([p1x, p1y, p1z]), outer_ball_joint)
+    a_arm = A_Arm(outer_ball_joint, np.array([0,0,0]), np.array([p1x, p1y, p1z]))
 
-    coef_mat = a_arm.local_coef_mat()
+    coef_mat = a_arm.local_coef_mat(0,1)
     nonlin_vec = a_arm.nonlin_expression()(angle)
 
     final_ball_joint_pos = np.dot(coef_mat, nonlin_vec) 
@@ -23,12 +23,12 @@ def test_A_arm_rotation_length_doesnt_change():
 
 def test_Single_Link_length_doesnt_change():
     len = 16.0
-    link = Single_Link(np.array([5,2,8]), len)
+    link = Single_Link(len, np.array([5,2,8]))
 
     alpha = 0.5
     beta = 4
 
-    local_A_mat = link.local_coef_mat()
+    local_A_mat = link.local_coef_mat(0,1)
 
     nonlin_vector = link.nonlin_expression()((alpha,beta))
 
@@ -44,7 +44,7 @@ def test_Upright_lengths_dont_change():
     phi = 1
     gamma = 1.5
 
-    local_A = upright.local_coef_mat()
+    local_A = upright.local_coef_mat(0,1)
 
     x = upright.nonlin_expression()((0,0,0, theta, phi, gamma))
 

@@ -163,13 +163,13 @@ class A_Arm(Fixed):
     output_count = 3
     input_names = ["alpha"]
     
-    def __init__(self, ball_joint_pos: array32, frame_pickups: array32, init_vars:array32=np.array([0])):
+    def __init__(self, ball_joint_pos: array32, frame_pickups_0: array32, frame_pickups_1: array32, init_vars:array32=np.array([0])):
         super().__init__(init_vars)
 
         self.ball_joint_pos: array32 = ball_joint_pos
 
-        self.frame_pickups_0: array32 = frame_pickups[:3]
-        self.frame_pickups_1: array32 = frame_pickups[3:]
+        self.frame_pickups_0: array32 = frame_pickups_0
+        self.frame_pickups_1: array32 = frame_pickups_1
 
         #pickup_1_to_0: array32 = self.frame_pickups_0-self.frame_pickups_1
         #pivot_axis: array32 = np.atleast_2d(pickup_1_to_0 / np.linalg.norm(pickup_1_to_0))

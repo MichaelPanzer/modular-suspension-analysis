@@ -52,10 +52,25 @@ class Sub_Chain():
 
         self.fixed_comp = fixed_comp
         self.end_comp = end_comp
+    
+    def fixed_vec(self) -> array32:
+        """
+        This method returns the vector relating the initial and final positions of the chain
+
+        If the end component is not fixed (meaning it is a wheel carrier), its position is accounted for in its nonlin vec and coef mat
+        """
+        output = self.fixed_comp.local_fixed_vec()
+
+        if isinstance(self.end_comp, Fixed):
+            output -= self.end_comp.local_fixed_vec()
+        
+        return output
 
 
     
 class Kinematic_Model:
+    #TODO this function really should take in a list of components and a sparse matrix defining the relationships between those components
+    #The sub chains should be generated from this matrix
     def __init__(self, sub_chains: list[Sub_Chain]):
         """
         sub_chains is of structure list[list[tuple[Component, start node, end node]]
@@ -66,6 +81,8 @@ class Kinematic_Model:
         -there the intermediate nodes should not contain any wheels or fixed nodes
         -the end node of the previous component connects to the start node of the next component
         """
+
+        self.sub_chains = sub_chains
 
         #TODO benchmark this stuff, this whole section is definitely really bad
         self.wheel_carriers: list[Wheel_Carrier] = []
@@ -132,7 +149,7 @@ class Kinematic_Model:
     
     #generates the solution to the linearized system of eqs
     def _global_fixed_vec(self) -> array32:
-        fixed_vec = [linkage.local_fixed_vec() for linkage in self.fixed_components]
+        fixed_vec = [chain.fixed_vec() for chain in self.sub_chains]
         #see if its possible to get rid of transpose
         return np.atleast_2d(np.block(fixed_vec)).T
 
